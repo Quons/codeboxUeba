@@ -1,0 +1,17 @@
+[
+  {
+    "name": "actUserWeek",
+    "completeStatus": "ok",
+    "cursor": "201806026"
+  },
+  {
+    "name": "actUserDay",
+    "completeStatus": "ok",
+    "cursor": "20180626"
+  },
+  {
+    "name": "actUserMonth",
+    "completeStatus": "ok",
+    "cursor": "20180626"
+  }
+]

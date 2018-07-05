@@ -1,0 +1,18 @@
+{
+
+    "mysql":{
+      "host":"123.59.54.196",
+      "port":3333,
+      "user":"test",
+      "pwd":"123456",
+      "dbName":"ueba"
+    },
+    "postgres":{
+      "host":"123.59.54.196",
+      "port":3330,
+      "user":"gpadmin",
+      "pwd":"gpadmin",
+      "dbName":"ueba"
+    }
+
+}
