@@ -2,7 +2,7 @@ package utils
 
 import (
 	"os"
-	"uebaDataJob/log"
+	"codeboxUeba/log"
 	"fmt"
 )
 

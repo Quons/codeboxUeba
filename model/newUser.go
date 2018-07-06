@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-type ActUserDay struct {
+type NewUserDay struct {
 	Id       int64
 	DayId    int
 	Num      int
@@ -10,7 +10,7 @@ type ActUserDay struct {
 	ConfigId int64
 }
 
-type ActUserWeek struct {
+type NewUserWeek struct {
 	Id       int64
 	WeekId   int
 	Num      int
@@ -20,7 +20,7 @@ type ActUserWeek struct {
 	ConfigId int64
 }
 
-type ActUserMonth struct {
+type NewUserMonth struct {
 	Id       int64
 	MonthId    int
 	Num      int

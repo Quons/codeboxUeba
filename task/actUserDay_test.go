@@ -2,7 +2,7 @@ package task
 
 import (
 	"testing"
-	"uebaDataJob/mysql"
+	"codeboxUeba/mysql"
 )
 
 func TestStatistic(t *testing.T) {

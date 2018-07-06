@@ -1,13 +1,13 @@
 package main
 
 import (
-	"uebaDataJob/task"
+	"codeboxUeba/task"
 	"sync"
 	"github.com/robfig/cron"
 	"time"
-	"uebaDataJob/model"
-	"uebaDataJob/conf"
-	"uebaDataJob/mysql"
+	"codeboxUeba/model"
+	"codeboxUeba/conf"
+	"codeboxUeba/mysql"
 )
 
 var counter = 0
@@ -54,13 +54,11 @@ func run() {
 	//获取任务列表
 	for _, t := range conf.Tasks {
 		t.FailChan = failTaskChan
-		jobs := task.TasksFactory(t.TaskType)
-		if jobs != nil {
+		job := task.TasksFactory(t.TaskType)
+		if job != nil {
+			wg.Add(1)
 			//todo 判断todate是否为null，为null就设置成当前时间
-			for _, job := range jobs {
-				wg.Add(1)
-				go job(wg, resultChan, t)
-			}
+			go job(wg, resultChan, t)
 		} else {
 			continue
 		}

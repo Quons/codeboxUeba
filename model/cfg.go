@@ -5,9 +5,7 @@ type Task struct{
 	JobCode int
 	Cursors string
 	TaskType string
-	DayConfigId int64
-	WeekConfigId int64
-	MonthConfigId int64
+	ConfigId int64
 	Interface string
 	FailChan chan *FailInfo
 }

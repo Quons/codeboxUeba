@@ -1,11 +1,11 @@
 package conf
 
 import (
-	"uebaDataJob/model"
+	"codeboxUeba/model"
 	"os"
 	"io/ioutil"
-	."uebaDataJob/utils"
-	"uebaDataJob/mysql"
+	. "codeboxUeba/utils"
+	"codeboxUeba/mysql"
 	"encoding/json"
 	"path/filepath"
 )
@@ -15,25 +15,29 @@ var DB *model.DB
 
 func Init() {
 	//数据库配置
-	abs,err:=filepath.Abs("")
+	abs, err := filepath.Abs("")
 	CheckError(err)
-	DB=&model.DB{}
-	err=json.Unmarshal(readFile(abs+"/db.json"),DB)
+	DB = &model.DB{}
+	err = json.Unmarshal(readFile(abs+"/db.json"), DB)
 	CheckError(err)
 	mysql.Init()
-	Tasks=mysql.ReadConf(127)
+	Tasks = mysql.ReadConf(127)
 }
 
-func readFile(path string)[]byte  {
-	cfgFile,err:=os.Open(path)
+func readFile(path string) []byte {
+	cfgFile, err := os.Open(path)
 	defer cfgFile.Close()
 	CheckError(err)
-	content,err:=ioutil.ReadAll(cfgFile)
+	content, err := ioutil.ReadAll(cfgFile)
 	CheckError(err)
 	return content
 }
 
 const (
-	ActUser="actUser"
-	NewUser="newUser"
+	ActUserDay   = "actUserDay"
+	ActUserWeek  = "actUserWeek"
+	ActUserMonth = "actUserMonth"
+	NewUserDay   = "newUserDay"
+	NewUserWeek  = "newUserWeek"
+	NewUserMonth = "newUserMonth"
 )

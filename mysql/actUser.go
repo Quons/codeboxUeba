@@ -1,10 +1,10 @@
 package mysql
 
 import (
-	"uebaDataJob/model"
-	"uebaDataJob/utils"
+	"codeboxUeba/model"
+	"codeboxUeba/utils"
 	"time"
-	"uebaDataJob/log"
+	"codeboxUeba/log"
 )
 
 func InsertActUserDay(actUserDay *model.ActUserDay) {

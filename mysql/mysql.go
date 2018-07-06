@@ -3,9 +3,9 @@ package mysql
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"uebaDataJob/utils"
-	"uebaDataJob/model"
-	"uebaDataJob/log"
+	"codeboxUeba/utils"
+	"codeboxUeba/model"
+	"codeboxUeba/log"
 	"fmt"
 	"strings"
 )
@@ -20,14 +20,14 @@ func Init() {
 }
 
 func ReadConf(jobCode int) (conf []model.Task) {
-	stmt, err := db.Prepare("select t.id,t.job_code,t.cursors,t.task_type,t.day_conf,t.week_conf,t.month_conf,dc.interfaces from task_conf t left join ueba_dataconfig dc on t.day_conf=dc.configId  where  job_code=?")
+	stmt, err := db.Prepare("select t.id,t.job_code,t.cursors,t.task_type,t.config_id,dc.interfaces from task_conf t left join ueba_dataconfig dc on t.config_id=dc.configId  where  job_code=?")
 	utils.CheckError(err)
 	rows, err := stmt.Query(jobCode)
 	utils.CheckError(err)
 	defer rows.Close()
 	for rows.Next() {
 		task := model.Task{}
-		rows.Scan(&task.Id, &task.JobCode, &task.Cursors, &task.TaskType, &task.DayConfigId,&task.WeekConfigId,&task.MonthConfigId, &task.Interface)
+		rows.Scan(&task.Id, &task.JobCode, &task.Cursors, &task.TaskType, &task.ConfigId, &task.Interface)
 		if task.Interface == "" {
 			log.LogError("interface is empty,please check you config")
 			continue

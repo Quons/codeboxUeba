@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"uebaDataJob/model"
-	"uebaDataJob/log"
-	"uebaDataJob/mysql"
+	"codeboxUeba/model"
+	"codeboxUeba/log"
+	"codeboxUeba/mysql"
 	"time"
 )
 
