@@ -7,6 +7,7 @@ import (
 	"time"
 	"codeboxUeba/log"
 	"codeboxUeba/utils"
+	"fmt"
 )
 
 func TasksFactory(taskName string) (f func(wg *sync.WaitGroup, rc chan *model.Task, task model.Task)) {
@@ -23,6 +24,8 @@ func TasksFactory(taskName string) (f func(wg *sync.WaitGroup, rc chan *model.Ta
 		return newUserWeekTask
 	case NewUserMonth:
 		return newUserMonthTask
+	case ActUserKeepDay:
+		return actUserKeepDayTask
 	default:
 		return nil
 	}
@@ -30,6 +33,7 @@ func TasksFactory(taskName string) (f func(wg *sync.WaitGroup, rc chan *model.Ta
 
 func dayStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
 	//获取cursor到当前时间的时间列表 todo 添加指定时间段的功能
+	//fmt.Println("cursor.......",t.Cursors)
 	fromDate, err := time.Parse("20060102", t.Cursors)
 	if err != nil {
 		log.LogError(err.Error())
@@ -47,12 +51,13 @@ func dayStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task, f func(
 			wg.Done()
 			return
 		}
+		fmt.Println("fromdate:",fromDate," todate:",toDate,"nowDate:",nowDate)
 		go f(t, fromDate, toDate)
 		fromDate = toDate
 	}
 }
 
-func monthStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task,f func(t model.Task, fromDate time.Time, toDate time.Time)) {
+func monthStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
 	//获取cursor到当前时间的时间列表
 	fromDate, err := time.Parse("20060102", t.Cursors)
 	if err != nil {
@@ -83,9 +88,7 @@ func monthStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task,f func
 	}
 }
 
-
-
-func weekStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task,f func(t model.Task, fromDate time.Time, toDate time.Time)) {
+func weekStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
 	//获取cursor到当前时间的时间列表 todo 添加指定时间段的功能
 	fromDate, err := time.Parse("20060102", t.Cursors)
 	utils.CheckError(err)

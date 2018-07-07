@@ -40,4 +40,5 @@ const (
 	NewUserDay   = "newUserDay"
 	NewUserWeek  = "newUserWeek"
 	NewUserMonth = "newUserMonth"
+	ActUserKeepDay="actUserKeepDay"
 )

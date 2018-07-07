@@ -34,5 +34,5 @@ func actUserInsert(t model.Task, fromDate time.Time, toDate time.Time) {
 	utils.CheckError(err)
 	actUserDay := &model.ActUserDay{Num: num, ConfigId: t.ConfigId, DayId: dayId}
 	mysql.InsertActUserDay(actUserDay)
-	fmt.Printf("fromday %v,num is:%v\n", fromDate, num)
+	fmt.Printf("actUserDay:fromday %v,num is:%v\n", fromDate, num)
 }

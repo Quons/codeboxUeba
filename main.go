@@ -26,6 +26,7 @@ func main() {
 	for {
 		select {
 		case s := <-resultChan:
+			//fmt.Println("cursor......",s.TaskType,s.Cursors)
 			//将数据更新到数据库中
 			mysql.UpdateCursor(s)
 		}
@@ -53,6 +54,7 @@ func run() {
 	wg := &sync.WaitGroup{}
 	//获取任务列表
 	for _, t := range conf.Tasks {
+		//fmt.Println("cursor.......",t.Cursors)
 		t.FailChan = failTaskChan
 		job := task.TasksFactory(t.TaskType)
 		if job != nil {

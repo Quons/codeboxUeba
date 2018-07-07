@@ -44,23 +44,36 @@ func UpdateCursor(task *model.Task) {
 	utils.CheckError(err)
 }
 
-
-
 func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {
 	interfaceSql := "select interfaces from ueba_dataconfig where configId=?"
 	stmt, err := db.Prepare(interfaceSql)
-	utils.CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
 	rows, err := stmt.Query(configId)
-	utils.CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
 	var interfaces string
 	rows.Next()
 	rows.Scan(&interfaces)
 	if rows.Next() {
 		log.LogError("too many result")
+		return
+	}
+	if interfaces == "" {
+		log.LogError("interfaces is empty!")
+		return
 	}
 	interfaceSql = "select url from ueba_interface where interfaceId in (" + interfaces + ")"
 	rows, err = db.Query(interfaceSql)
-	utils.CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+
 	var interfaceSlice []string
 	for rows.Next() {
 		var i string
@@ -74,12 +87,12 @@ func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {
 func FailRecord(date string, confId int) {
 	recordSql := "update task_conf set fail_record = concat(ifnull(fail_record,''),?,',') where id = ?"
 	stmt, err := db.Prepare(recordSql)
-	if err!=nil{
+	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
 	_, err = stmt.Exec(date, confId)
-	if err!=nil{
+	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
