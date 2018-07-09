@@ -30,12 +30,12 @@ func newUserWeekStatistics(t model.Task, fromDate time.Time, toDate time.Time) {
 		panic(err)
 		return
 	}
-	//把查询到的数据插入到mysql中
+	//把查询到的数据插入到mysql中 todo 修改weekid
 	weekId, err := strconv.Atoi(fromDate.Format("20060102"))
 	utils.CheckError(err)
 	endDay, err := strconv.Atoi(toDate.Format("20060102"))
 	utils.CheckError(err)
 	newUserWeek := &model.NewUserWeek{Num: num, ConfigId: t.ConfigId, WeekId: weekId, StartDay: weekId, EndDay: endDay}
 	mysql.InsertNewUserWeek(newUserWeek)
-	fmt.Printf("fromday %v,today %v, num is:%v\n", fromDate, toDate, num)
+	fmt.Printf("newUserWeek:fromday %v,today %v, num is:%v\n", fromDate, toDate, num)
 }

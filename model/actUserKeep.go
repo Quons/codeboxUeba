@@ -23,7 +23,7 @@ type ActUserKeepWeek struct {
 type ActUserKeepMonth struct {
 	Id       int64
 	MonthId  int
-	KeepWeek int
+	KeepMonth int
 	Num      int
 	AddTime  time.Time
 	ConfigId int64

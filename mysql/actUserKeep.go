@@ -4,6 +4,7 @@ import (
 	"codeboxUeba/model"
 	"time"
 	"codeboxUeba/log"
+	"errors"
 )
 
 func InsertActUserKeepDay(userKeepDay *model.ActUserKeepDay) {
@@ -20,21 +21,21 @@ func InsertActUserKeepDay(userKeepDay *model.ActUserKeepDay) {
 	}
 }
 
-func InsertActUserKeepWeek(newUserWeek *model.NewUserWeek) {
+func InsertActUserKeepWeek(actUserKeepWeek *model.ActUserKeepWeek) {
 	//检查dayid是否存在
-	stmt, err := db.Prepare("insert into ueba_newuserweek (weekId,num,configId,addTime,startDay,endDay) values (?,?,?,?,?,?) on duplicate key update num=?")
+	stmt, err := db.Prepare("insert into ueba_actuserkeepweek(weekId,keepWeek,num,configId,addTime) values (?,?,?,?,?) on duplicate key update num=?")
 	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
-	_, err = stmt.Exec(newUserWeek.WeekId, newUserWeek.Num, newUserWeek.ConfigId, time.Now(), newUserWeek.StartDay, newUserWeek.EndDay, newUserWeek.Num)
+	_, err = stmt.Exec(actUserKeepWeek.WeekId, actUserKeepWeek.KeepWeek, actUserKeepWeek.Num, actUserKeepWeek.ConfigId, time.Now(), actUserKeepWeek.Num)
 	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
 }
 
-func InsertActUserKeepMonth(newUserMonth *model.NewUserMonth) error {
+func InsertActUserKeepMonth(newUserMonth *model.ActUserKeepMonth) error {
 	//检查dayid是否存在
 	stmt, err := db.Prepare("insert into ueba_newusermonth (monthId,num,configId,addTime) values (?,?,?,?) on duplicate key update num=?")
 	if err != nil {
@@ -45,4 +46,29 @@ func InsertActUserKeepMonth(newUserMonth *model.NewUserMonth) error {
 		return err
 	}
 	return nil
+}
+
+func QueryUserKeepPreWeek(confId int64, weekId int) (int, error) {
+
+	weekId = weekId - 1
+	stmt, err := db.Prepare("select num from ueba_actuserkeepweek where weekId=? and keepWeek=1 and configId=?")
+	if err != nil {
+		log.LogError(err.Error())
+		return 0, err
+	}
+	rows, err := stmt.Query(weekId, confId)
+	if err != nil {
+		log.LogError(err.Error())
+		return 0, err
+	}
+	var num = 0
+	rows.Next()
+	rows.Scan(&num)
+	if rows.Next() {
+		log.LogError("too many result!")
+		err = errors.New("too many result")
+		return 0, err
+	}
+	return num, nil
+
 }

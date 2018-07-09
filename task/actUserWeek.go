@@ -38,5 +38,5 @@ func actUserWeekStatistics(t model.Task, fromDate time.Time, toDate time.Time) {
 	utils.CheckError(err)
 	actUserWeek := &model.ActUserWeek{Num: num, ConfigId: t.ConfigId, WeekId: weekId, StartDay: weekId, EndDay: endDay}
 	mysql.InsertActUserWeek(actUserWeek)
-	fmt.Printf("fromday %v,today %v, num is:%v\n", fromDate, toDate, num)
+	fmt.Printf("actUserWeek:fromday %v,today %v, num is:%v\n", fromDate, toDate, num)
 }

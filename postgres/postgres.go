@@ -69,7 +69,7 @@ func GetGpCount(confId int64, fromDate time.Time, toDate time.Time) (num int, er
 	return
 }
 
-func GetUserKeepCount(startTime, endTime time.Time, t model.Task) (num int, err error) {
+func GetUserKeepCount(startTime,startTimeD, endTime,endTimeD time.Time, t model.Task) (num int, err error) {
 	//获取日活接口列表，进行预处理
 	interfaceParam := mysql.QueryInterfaceParamByConfig(t.ConfigId)
 	if interfaceParam == "" {
@@ -88,7 +88,7 @@ func GetUserKeepCount(startTime, endTime time.Time, t model.Task) (num int, err 
                            		requesttime between $3 and $4
                     		) d2 on d1.userid = d2.userid
 					`
-	num, err = QueryCount(userKeepSql, startTime, startTime.AddDate(0, 0, 1), endTime, endTime.AddDate(0, 0, 1))
+	num, err = QueryCount(userKeepSql, startTime, startTimeD, endTime, endTimeD)
 	if err != nil {
 		log.LogError(err.Error())
 		return 0, err

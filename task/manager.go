@@ -26,6 +26,12 @@ func TasksFactory(taskName string) (f func(wg *sync.WaitGroup, rc chan *model.Ta
 		return newUserMonthTask
 	case ActUserKeepDay:
 		return actUserKeepDayTask
+	case ActUserKeepWeek:
+		return actUserKeepWeekTask
+	case ActUserKeepMonth:
+		return actUserKeepMonthTask
+	case BackUserWeek:
+		return backUserWeekTask
 	default:
 		return nil
 	}

@@ -84,6 +84,7 @@ func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {
 	return
 }
 
+
 func FailRecord(date string, confId int) {
 	recordSql := "update task_conf set fail_record = concat(ifnull(fail_record,''),?,',') where id = ?"
 	stmt, err := db.Prepare(recordSql)

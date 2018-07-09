@@ -40,5 +40,5 @@ func actUserMonthStatistics(t model.Task, fromDate time.Time, toDate time.Time) 
 		log.LogError(err.Error())
 		return
 	}
-	fmt.Printf("fromday %v,today %v, num is:%v\n", fromDate, toDate, num)
+	fmt.Printf("actUserMonth:fromday %v,today %v, num is:%v\n", fromDate, toDate, num)
 }

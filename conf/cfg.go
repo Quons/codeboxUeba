@@ -34,11 +34,14 @@ func readFile(path string) []byte {
 }
 
 const (
-	ActUserDay   = "actUserDay"
-	ActUserWeek  = "actUserWeek"
-	ActUserMonth = "actUserMonth"
-	NewUserDay   = "newUserDay"
-	NewUserWeek  = "newUserWeek"
-	NewUserMonth = "newUserMonth"
-	ActUserKeepDay="actUserKeepDay"
+	ActUserDay       = "actUserDay"
+	ActUserWeek      = "actUserWeek"
+	ActUserMonth     = "actUserMonth"
+	NewUserDay       = "newUserDay"
+	NewUserWeek      = "newUserWeek"
+	NewUserMonth     = "newUserMonth"
+	ActUserKeepDay   = "actUserKeepDay"
+	ActUserKeepWeek  = "actUserKeepWeek"
+	ActUserKeepMonth = "actUserKeepMonth"
+	BackUserWeek     = "backUserWeek"
 )

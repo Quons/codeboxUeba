@@ -8,6 +8,7 @@ import (
 	"codeboxUeba/mysql"
 	"codeboxUeba/postgres"
 	"codeboxUeba/log"
+	"math"
 )
 
 func actUserKeepDayTask(wg *sync.WaitGroup, rc chan *model.Task, t model.Task) {
@@ -19,9 +20,6 @@ func actUserKeepDayTask(wg *sync.WaitGroup, rc chan *model.Task, t model.Task) {
 		userKeepDailyTask(t)
 	}
 	wg.Done()
-	//获取当前日期，前推14天，得到日期列表，
-
-	//dayStatistic(wg, rc, t, newUserDayInsert)
 }
 
 func userKeepInitTask(t model.Task, rc chan *model.Task) {
@@ -35,9 +33,9 @@ func userKeepInitTask(t model.Task, rc chan *model.Task) {
 	wg := &sync.WaitGroup{}
 
 	//遍历前十四天的数据
-	for i := -1; i > -14; i-- {
+	for i := 1; i < 14; i++ {
 		wg.Add(1)
-		startTime := currentTime.AddDate(0, 0, i)
+		startTime := currentTime.AddDate(0, 0, -i)
 		//统计每天数据
 		go initTaskStatistic(startTime, currentTime, t, wg)
 	}
@@ -47,17 +45,18 @@ func userKeepInitTask(t model.Task, rc chan *model.Task) {
 }
 
 func initTaskStatistic(startTime, currentTime time.Time, t model.Task, wg *sync.WaitGroup) {
-	keepDay := 1
+	keepDay := 0
 	dayId, err := strconv.Atoi(startTime.Format("20060102"))
 	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
 	//遍历startTime 到 currentTime之间的
-	for currentTime.After(startTime) {
-		nextDay := startTime.AddDate(0, 0, 1)
+	tmpTime := startTime
+	for currentTime.After(tmpTime) {
+		nextDay := tmpTime.AddDate(0, 0, 1)
 		//查询当天数据
-		num, err := postgres.GetUserKeepCount(startTime, nextDay, t)
+		num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 0, 1), nextDay, nextDay.AddDate(0, 0, 1), t)
 		if err != nil {
 			log.LogError(err.Error())
 			return
@@ -65,7 +64,7 @@ func initTaskStatistic(startTime, currentTime time.Time, t model.Task, wg *sync.
 		//存储数据到mysql
 		userKeepDay := &model.ActUserKeepDay{DayId: dayId, KeepDay: keepDay, Num: num, ConfigId: t.ConfigId}
 		mysql.InsertActUserKeepDay(userKeepDay)
-		startTime = nextDay
+		tmpTime = nextDay
 		keepDay++
 	}
 	wg.Done()
@@ -80,8 +79,8 @@ func userKeepDailyTask(t model.Task) {
 	}
 
 	//遍历前十四天的数据
-	for i := -1; i > -14; i-- {
-		startTime := currentTime.AddDate(0, 0, i)
+	for i := 1; i < 14; i++ {
+		startTime := currentTime.AddDate(0, 0, -i)
 		//统计每天数据
 		go dailyTaskStatistic(startTime, currentTime, t)
 	}
@@ -89,26 +88,15 @@ func userKeepDailyTask(t model.Task) {
 }
 
 func dailyTaskStatistic(startTime, currentTime time.Time, t model.Task) {
-	//计算keepday，为starttime到currentTime的差值
-	start, err := strconv.Atoi(startTime.Format("20060102"))
-	if err != nil {
-		log.LogError(err.Error())
-		return
-	}
-	end, err := strconv.Atoi(currentTime.Format("20060102"))
-	if err != nil {
-		log.LogError(err.Error())
-		return
-	}
-	keepDay := end - start
-	//求dayId
+	duration := currentTime.Sub(startTime)
+	keepDay := int(math.Floor((duration.Hours() / 24) + 0.5))
 	dayId, err := strconv.Atoi(startTime.Format("20060102"))
 	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
 	//查询gp
-	num, err := postgres.GetUserKeepCount(startTime, currentTime, t)
+	num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 0, 1), currentTime, currentTime.AddDate(0, 0, 1), t)
 	if err != nil {
 		log.LogError(err.Error())
 		return
