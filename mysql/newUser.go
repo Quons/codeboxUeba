@@ -65,3 +65,25 @@ func QueryNewUserCurrentWeek(confId int64, weekId int) (int, error) {
 	return num, nil
 
 }
+func QueryNewUserCurrentMonth(confId int64, weekId int) (int, error) {
+	stmt, err := db.Prepare("select num from ueba_newusermonth where configId=? and monthId=?")
+	if err != nil {
+		log.LogError(err.Error())
+		return 0, err
+	}
+
+	rows, err := stmt.Query(confId, weekId)
+	if err != nil {
+		log.LogError(err.Error())
+		return 0, err
+	}
+	num := 0
+	rows.Next()
+	rows.Scan(&num)
+	if rows.Next() {
+		log.LogError("too manny result")
+		return 0, errors.New("too many result")
+	}
+	return num, nil
+
+}

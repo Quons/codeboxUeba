@@ -6,14 +6,14 @@ import (
 	"time"
 )
 
-func InsertBackUserWeek(backUserWeek *model.BackUserWeek) {
-	backUserWeekSql := "insert into ueba_backuserweek (weekId,num, startDay, endDay, addTime, configId,) values (?,?,?,?,?,?)"
-	stmt, err := db.Prepare(backUserWeekSql)
+func InsertLoseUserWeek(loseUserWeek *model.LoseUserWeek) {
+	loseUserWeekSql := "insert into ueba_loseuserweek (weekId,num, startDay, endDay, addTime, configId,) values (?,?,?,?,?,?)"
+	stmt, err := db.Prepare(loseUserWeekSql)
 	if err != nil {
 		log.Error(err.Error())
 		return
 	}
-	_, err = stmt.Exec(backUserWeek.WeekId, backUserWeek.Num, backUserWeek.StartDay, backUserWeek.EndDay, time.Now(), backUserWeek.ConfigId)
+	_, err = stmt.Exec(loseUserWeek.WeekId, loseUserWeek.Num, loseUserWeek.StartDay, loseUserWeek.EndDay, time.Now(), loseUserWeek.ConfigId)
 	if err != nil {
 		log.Error(err.Error())
 		return

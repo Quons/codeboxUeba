@@ -44,4 +44,6 @@ const (
 	ActUserKeepWeek  = "actUserKeepWeek"
 	ActUserKeepMonth = "actUserKeepMonth"
 	BackUserWeek     = "backUserWeek"
+	BackUserMonth    = "backUserMonth"
+	LoseUserWeek    = "loseUserWeek"
 )

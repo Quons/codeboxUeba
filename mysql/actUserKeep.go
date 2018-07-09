@@ -5,6 +5,8 @@ import (
 	"time"
 	"codeboxUeba/log"
 	"errors"
+	"strconv"
+	"fmt"
 )
 
 func InsertActUserKeepDay(userKeepDay *model.ActUserKeepDay) {
@@ -48,9 +50,11 @@ func InsertActUserKeepMonth(newUserMonth *model.ActUserKeepMonth) error {
 	return nil
 }
 
-func QueryUserKeepPreWeek(confId int64, weekId int) (int, error) {
+func QueryUserKeepPreWeek(confId int64, fromDate time.Time) (int, error) {
+	fromDate = fromDate.AddDate(0, 0, -7)
+	year, week := fromDate.ISOWeek()
+	weekId, err := strconv.Atoi(fmt.Sprintf("%v%v", year, week))
 
-	weekId = weekId - 1
 	stmt, err := db.Prepare("select num from ueba_actuserkeepweek where weekId=? and keepWeek=1 and configId=?")
 	if err != nil {
 		log.LogError(err.Error())
@@ -71,4 +75,28 @@ func QueryUserKeepPreWeek(confId int64, weekId int) (int, error) {
 	}
 	return num, nil
 
+}
+
+func QueryUserKeepPreMonth(confId int64, fromDate time.Time) (int, error) {
+	fromDate = fromDate.AddDate(0, -1, 0)
+	monthId := fromDate.Format("200601")
+	stmt, err := db.Prepare("select num from ueba_actuserkeepmonth where monthId=? and keepMonth=1 and configId=?")
+	if err != nil {
+		log.LogError(err.Error())
+		return 0, err
+	}
+	rows, err := stmt.Query(monthId, confId)
+	if err != nil {
+		log.LogError(err.Error())
+		return 0, err
+	}
+	var num = 0
+	rows.Next()
+	rows.Scan(&num)
+	if rows.Next() {
+		log.LogError("too many result!")
+		err = errors.New("too many result")
+		return 0, err
+	}
+	return num, nil
 }
