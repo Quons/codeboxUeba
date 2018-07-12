@@ -14,13 +14,12 @@ var db *sql.DB
 
 func Init() {
 	var err error
-	//db, err = sql.Open("mysql", conf.DB.Mysql.User+":"+conf.DB.Mysql.Pwd+"@tcp("+conf.DB.Mysql.Host+":"+strconv.Itoa(conf.DB.Mysql.Port)+")/"+conf.DB.Mysql.DbName+"?charset=utf8") //第一个参数为驱动名
 	db, err = sql.Open("mysql", "test:123456@tcp(123.59.54.196:3333)/ueba?charset=utf8") //第一个参数为驱动名
 	utils.CheckError(err)
 }
 
 func ReadConf(jobCode int) (conf []model.Task) {
-	stmt, err := db.Prepare("select t.id,t.job_code,t.cursors,t.task_type,t.config_id,dc.interfaces from task_conf t left join ueba_dataconfig dc on t.config_id=dc.configId  where  job_code=?")
+	stmt, err := db.Prepare("SELECT t.id,t.job_code,t.cursors,t.task_type,t.config_id,dc.interfaces FROM task_conf t LEFT JOIN ueba_dataconfig dc ON t.config_id=dc.configId  WHERE  job_code=?")
 	utils.CheckError(err)
 	rows, err := stmt.Query(jobCode)
 	utils.CheckError(err)
@@ -38,14 +37,14 @@ func ReadConf(jobCode int) (conf []model.Task) {
 }
 
 func UpdateCursor(task *model.Task) {
-	stmt, err := db.Prepare("update task_conf set cursors=? where id=?")
+	stmt, err := db.Prepare("UPDATE task_conf SET cursors=? WHERE id=?")
 	utils.CheckError(err)
 	_, err = stmt.Exec(task.Cursors, task.Id)
 	utils.CheckError(err)
 }
 
 func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {
-	interfaceSql := "select interfaces from ueba_dataconfig where configId=?"
+	interfaceSql := "SELECT interfaces FROM ueba_dataconfig WHERE configId=?"
 	stmt, err := db.Prepare(interfaceSql)
 	if err != nil {
 		log.LogError(err.Error())
@@ -84,9 +83,8 @@ func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {
 	return
 }
 
-
 func FailRecord(date string, confId int) {
-	recordSql := "update task_conf set fail_record = concat(ifnull(fail_record,''),?,',') where id = ?"
+	recordSql := "UPDATE task_conf SET fail_record = concat(ifnull(fail_record,''),?,',') WHERE id = ?"
 	stmt, err := db.Prepare(recordSql)
 	if err != nil {
 		log.LogError(err.Error())

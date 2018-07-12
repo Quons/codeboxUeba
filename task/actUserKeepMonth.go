@@ -8,6 +8,7 @@ import (
 	"codeboxUeba/mysql"
 	"codeboxUeba/postgres"
 	"codeboxUeba/log"
+	"fmt"
 )
 
 func actUserKeepMonthTask(wg *sync.WaitGroup, rc chan *model.Task, t model.Task) {
@@ -28,10 +29,11 @@ func userKeepMonthInitTask(t model.Task, rc chan *model.Task) {
 		log.LogError(err.Error())
 		return
 	}
+	currentTime = currentTime.AddDate(0, -1, 0)
 
 	wg := &sync.WaitGroup{}
 	//遍历前6个月的数据
-	for i := 1; i < 6; i++ {
+	for i := 0; i < 7; i++ {
 		wg.Add(1)
 		startTime := currentTime.AddDate(0, -i, 0)
 		//统计每天数据
@@ -47,9 +49,8 @@ func userKeepMonthInitTaskStatistic(startTime, currentTime time.Time, t model.Ta
 	keepMonth := 0
 	//遍历startTime 到 currentTime之间的
 	tmpTime := startTime
-	for currentTime.After(tmpTime) {
+	for currentTime.After(tmpTime) || currentTime == tmpTime {
 		nextMonth := tmpTime.AddDate(0, 1, 0)
-		//查询当天数据
 		num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 1, 0), nextMonth, nextMonth.AddDate(0, 1, 0), t)
 		if err != nil {
 			log.LogError(err.Error())
@@ -62,7 +63,11 @@ func userKeepMonthInitTaskStatistic(startTime, currentTime time.Time, t model.Ta
 			return
 		}
 		userKeepMonth := &model.ActUserKeepMonth{MonthId: monthId, KeepMonth: keepMonth, Num: num, ConfigId: t.ConfigId}
-		mysql.InsertActUserKeepMonth(userKeepMonth)
+		err = mysql.InsertActUserKeepMonth(userKeepMonth)
+		if err != nil {
+			log.LogError(err.Error())
+		}
+		fmt.Printf("userKeepMonthInitTaskStatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
 		tmpTime = nextMonth
 		keepMonth++
 	}
@@ -76,15 +81,15 @@ func userKeepMonthDailyTask(t model.Task, rc chan *model.Task) {
 		log.LogError(err.Error())
 		return
 	}
-
+	//计算的是上个月的数据
+	currentTime = currentTime.AddDate(0, -1, 0)
 	//遍历前6月的数据
-	for i := 1; i < 6; i++ {
-		startTime := currentTime.AddDate(0, -1, 0)
-		//统计每天数据
+	for i := 0; i < 7; i++ {
+		startTime := currentTime.AddDate(0, -i, 0)
+		//统计每月数据
 		go userKeepMonthDailyTaskStatistic(startTime, currentTime, t)
-		currentTime = startTime
-	}
 
+	}
 }
 
 func userKeepMonthDailyTaskStatistic(startTime, currentTime time.Time, t model.Task) {
@@ -92,11 +97,12 @@ func userKeepMonthDailyTaskStatistic(startTime, currentTime time.Time, t model.T
 	keepMonth := 0
 	tmpTime := startTime
 	for currentTime.After(tmpTime) {
-		tmpTime.AddDate(0, 1, 0)
+		tmpTime = tmpTime.AddDate(0, 1, 0)
 		keepMonth++
 	}
 
 	num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 1, 0), currentTime, currentTime.AddDate(0, 1, 0), t)
+
 	if err != nil {
 		log.LogError(err.Error())
 		return
@@ -107,5 +113,10 @@ func userKeepMonthDailyTaskStatistic(startTime, currentTime time.Time, t model.T
 		return
 	}
 	userKeepMonth := &model.ActUserKeepMonth{MonthId: monthId, KeepMonth: keepMonth, Num: num, ConfigId: t.ConfigId}
-	mysql.InsertActUserKeepMonth(userKeepMonth)
+	err = mysql.InsertActUserKeepMonth(userKeepMonth)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	fmt.Printf("userKeepMonthDailyTaskStatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
 }

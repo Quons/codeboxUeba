@@ -2,33 +2,36 @@ package mysql
 
 import (
 	"codeboxUeba/model"
-	"qiniupkg.com/x/log.v7"
 	"time"
+	"codeboxUeba/log"
 )
 
-func InsertLoseUserWeek(loseUserWeek *model.LoseUserWeek) {
-	loseUserWeekSql := "insert into ueba_loseuserweek (weekId,num, startDay, endDay, addTime, configId,) values (?,?,?,?,?,?)"
+func InsertLoseUserWeek(loseUserWeek *model.LoseUserWeek) error {
+	loseUserWeekSql := "insert into ueba_loseuserweek (weekId,num, startDay, endDay, addTime, configId) values (?,?,?,?,?,?) on duplicate key update num=?"
 	stmt, err := db.Prepare(loseUserWeekSql)
 	if err != nil {
-		log.Error(err.Error())
-		return
+		log.LogError(err.Error())
+		return err
 	}
-	_, err = stmt.Exec(loseUserWeek.WeekId, loseUserWeek.Num, loseUserWeek.StartDay, loseUserWeek.EndDay, time.Now(), loseUserWeek.ConfigId)
+	_, err = stmt.Exec(loseUserWeek.WeekId, loseUserWeek.Num, loseUserWeek.StartDay, loseUserWeek.EndDay, time.Now(), loseUserWeek.ConfigId, loseUserWeek.Num)
 	if err != nil {
-		log.Error(err.Error())
-		return
+		log.LogError(err.Error())
+		return err
 	}
+	return nil
 }
-func InsertBackUserMonth(backUserMonth *model.BackUserMonth) {
-	backUserWeekSql := "insert into ueba_backusermonth (weekId,num, addTime, configId) values (?,?,?,?)"
+
+func InsertLoseUserMonth(loseUserMonth *model.LoseUserMonth) error {
+	backUserWeekSql := "insert into ueba_backusermonth (monthId,num, addTime, configId) values (?,?,?,?)  on duplicate key update num=?"
 	stmt, err := db.Prepare(backUserWeekSql)
 	if err != nil {
-		log.Error(err.Error())
-		return
+		log.LogError(err.Error())
+		return err
 	}
-	_, err = stmt.Exec(backUserMonth.MonthId, backUserMonth.Num, time.Now(), backUserMonth.ConfigId)
+	_, err = stmt.Exec(loseUserMonth.MonthId, loseUserMonth.Num, time.Now(), loseUserMonth.ConfigId, loseUserMonth.Num)
 	if err != nil {
-		log.Error(err.Error())
-		return
+		log.LogError(err.Error())
+		return err
 	}
+	return nil
 }

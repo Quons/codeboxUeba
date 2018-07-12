@@ -4,7 +4,6 @@ import (
 	"sync"
 	"codeboxUeba/model"
 	"time"
-	"codeboxUeba/utils"
 	"fmt"
 	"strconv"
 	"codeboxUeba/mysql"
@@ -31,8 +30,15 @@ func newUserDayInsert(t model.Task, fromDate time.Time, toDate time.Time) {
 	}
 	//把查询到的数据插入到mysql中
 	dayId, err := strconv.Atoi(fromDate.Format("20060102"))
-	utils.CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
 	newUserDay := &model.NewUserDay{Num: num, ConfigId: t.ConfigId, DayId: dayId}
-	mysql.InsertNewUserDay(newUserDay)
+	err = mysql.InsertNewUserDay(newUserDay)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
 	fmt.Printf("new userDay ,fromday %v,num is:%v\n", fromDate, num)
 }

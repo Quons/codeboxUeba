@@ -11,11 +11,11 @@ import (
 	"fmt"
 )
 
-func backUserMonthTask(wg *sync.WaitGroup, rc chan *model.Task, t model.Task) {
-	monthStatistic(wg, rc, t, backUserMonthStatistics)
+func loseUserMonthTask(wg *sync.WaitGroup, rc chan *model.Task, t model.Task) {
+	monthStatistic(wg, rc, t, loseUserMonthStatistics)
 }
 
-func backUserMonthStatistics(t model.Task, fromDate time.Time, toDate time.Time) {
+func loseUserMonthStatistics(t model.Task, fromDate time.Time, toDate time.Time) {
 	defer func() {
 		if recover() != nil {
 			//如果失败，记录失败记录
@@ -23,13 +23,13 @@ func backUserMonthStatistics(t model.Task, fromDate time.Time, toDate time.Time)
 		}
 	}()
 
-	//查询当月的活跃用户
+	//查询上个月的活跃用户
 	monthId, err := strconv.Atoi(fromDate.Format("200601"))
 	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
-	totalActUser, err := postgres.GetGpCount(t.ConfigId, fromDate, toDate)
+	totalActUser, err := postgres.GetGpCount(t.ConfigId, fromDate.AddDate(0, -1, 0), toDate.AddDate(0, -1, 0))
 	if err != nil {
 		log.LogError(err.Error())
 		return
@@ -46,14 +46,14 @@ func backUserMonthStatistics(t model.Task, fromDate time.Time, toDate time.Time)
 		log.LogError(err.Error())
 		return
 	}
-	//周回流用户= 当周活跃用户-当周留存用户-当周新增用户  只需要查询上周数据
-	backUserMonthCount := totalActUser - userKeepMonth - newUserMonth
+	//月流失用户= 上月活跃用户-当月留存用户-当月新增用户  只需要查询上月数据
+	loseUserMonthCount := totalActUser - userKeepMonth - newUserMonth
 
-	backUserMonth := &model.BackUserMonth{MonthId: monthId, Num: backUserMonthCount, ConfigId: t.ConfigId}
+	loseUserMonth := &model.LoseUserMonth{MonthId: monthId, Num: loseUserMonthCount, ConfigId: t.ConfigId}
 	//将结果添加到表中
-	err = mysql.InsertBackUserMonth(backUserMonth)
+	err = mysql.InsertLoseUserMonth(loseUserMonth)
 	if err != nil {
 		log.LogError(err.Error())
 	}
-	fmt.Printf("backUserMonthStatistics:fromday %v,today %v, num is:%v\n", fromDate, toDate, backUserMonthCount)
+	fmt.Printf("loseUserMonthStatistics:fromday %v,today %v, num is:%+v\n", fromDate, toDate, loseUserMonthCount)
 }

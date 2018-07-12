@@ -45,5 +45,7 @@ const (
 	ActUserKeepMonth = "actUserKeepMonth"
 	BackUserWeek     = "backUserWeek"
 	BackUserMonth    = "backUserMonth"
-	LoseUserWeek    = "loseUserWeek"
+	LoseUserWeek     = "loseUserWeek"
+	LoseUserMonth    = "loseUserMonth"
+	FunnelTask       = "funnelTask"
 )

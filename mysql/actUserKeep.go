@@ -9,32 +9,34 @@ import (
 	"fmt"
 )
 
-func InsertActUserKeepDay(userKeepDay *model.ActUserKeepDay) {
+func InsertActUserKeepDay(userKeepDay *model.ActUserKeepDay) error {
 	//检查dayid是否存在
 	stmt, err := db.Prepare("insert into ueba_actuserkeepday(dayId,keepDay,num,configId,addTime) values (?,?,?,?,?) on duplicate key update num=?")
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return err
 	}
 	_, err = stmt.Exec(userKeepDay.DayId, userKeepDay.KeepDay, userKeepDay.Num, userKeepDay.ConfigId, time.Now(), userKeepDay.Num)
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return err
 	}
+	return nil
 }
 
-func InsertActUserKeepWeek(actUserKeepWeek *model.ActUserKeepWeek) {
+func InsertActUserKeepWeek(actUserKeepWeek *model.ActUserKeepWeek) error {
 	//检查dayid是否存在
 	stmt, err := db.Prepare("insert into ueba_actuserkeepweek(weekId,keepWeek,num,configId,addTime) values (?,?,?,?,?) on duplicate key update num=?")
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return err
 	}
 	_, err = stmt.Exec(actUserKeepWeek.WeekId, actUserKeepWeek.KeepWeek, actUserKeepWeek.Num, actUserKeepWeek.ConfigId, time.Now(), actUserKeepWeek.Num)
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return err
 	}
+	return nil
 }
 
 func InsertActUserKeepMonth(newUserMonth *model.ActUserKeepMonth) error {
@@ -50,11 +52,11 @@ func InsertActUserKeepMonth(newUserMonth *model.ActUserKeepMonth) error {
 	return nil
 }
 
+//获取上周的用户留存，用户流失和用户回流统计中使用
 func QueryUserKeepPreWeek(confId int64, fromDate time.Time) (int, error) {
 	fromDate = fromDate.AddDate(0, 0, -7)
 	year, week := fromDate.ISOWeek()
 	weekId, err := strconv.Atoi(fmt.Sprintf("%v%v", year, week))
-
 	stmt, err := db.Prepare("select num from ueba_actuserkeepweek where weekId=? and keepWeek=1 and configId=?")
 	if err != nil {
 		log.LogError(err.Error())
@@ -74,7 +76,6 @@ func QueryUserKeepPreWeek(confId int64, fromDate time.Time) (int, error) {
 		return 0, err
 	}
 	return num, nil
-
 }
 
 func QueryUserKeepPreMonth(confId int64, fromDate time.Time) (int, error) {

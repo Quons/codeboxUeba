@@ -9,6 +9,7 @@ import (
 	"codeboxUeba/postgres"
 	"codeboxUeba/log"
 	"math"
+	"fmt"
 )
 
 func actUserKeepDayTask(wg *sync.WaitGroup, rc chan *model.Task, t model.Task) {
@@ -29,11 +30,11 @@ func userKeepInitTask(t model.Task, rc chan *model.Task) {
 		log.LogError(err.Error())
 		return
 	}
-
+	currentTime = currentTime.AddDate(0, 0, -1)
 	wg := &sync.WaitGroup{}
 
 	//遍历前十四天的数据
-	for i := 1; i < 14; i++ {
+	for i := 0; i < 14; i++ {
 		wg.Add(1)
 		startTime := currentTime.AddDate(0, 0, -i)
 		//统计每天数据
@@ -53,7 +54,7 @@ func initTaskStatistic(startTime, currentTime time.Time, t model.Task, wg *sync.
 	}
 	//遍历startTime 到 currentTime之间的
 	tmpTime := startTime
-	for currentTime.After(tmpTime) {
+	for currentTime.After(tmpTime) || currentTime == tmpTime {
 		nextDay := tmpTime.AddDate(0, 0, 1)
 		//查询当天数据
 		num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 0, 1), nextDay, nextDay.AddDate(0, 0, 1), t)
@@ -63,11 +64,16 @@ func initTaskStatistic(startTime, currentTime time.Time, t model.Task, wg *sync.
 		}
 		//存储数据到mysql
 		userKeepDay := &model.ActUserKeepDay{DayId: dayId, KeepDay: keepDay, Num: num, ConfigId: t.ConfigId}
-		mysql.InsertActUserKeepDay(userKeepDay)
+		err = mysql.InsertActUserKeepDay(userKeepDay)
+		if err != nil {
+			log.LogError(err.Error())
+		}
+		fmt.Printf("initTaskSatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
 		tmpTime = nextDay
 		keepDay++
 	}
 	wg.Done()
+
 }
 
 func userKeepDailyTask(t model.Task) {
@@ -77,9 +83,10 @@ func userKeepDailyTask(t model.Task) {
 		log.LogError(err.Error())
 		return
 	}
+	currentTime = currentTime.AddDate(0, 0, -1)
 
 	//遍历前十四天的数据
-	for i := 1; i < 14; i++ {
+	for i := 0; i < 14; i++ {
 		startTime := currentTime.AddDate(0, 0, -i)
 		//统计每天数据
 		go dailyTaskStatistic(startTime, currentTime, t)
@@ -103,5 +110,10 @@ func dailyTaskStatistic(startTime, currentTime time.Time, t model.Task) {
 	}
 	//存储数据到mysql
 	userKeepDay := &model.ActUserKeepDay{DayId: dayId, KeepDay: keepDay, Num: num, ConfigId: t.ConfigId}
-	mysql.InsertActUserKeepDay(userKeepDay)
+	err = mysql.InsertActUserKeepDay(userKeepDay)
+	if err != nil {
+		log.LogError(err.Error())
+	}
+	fmt.Printf("dailyTaskSatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
+
 }

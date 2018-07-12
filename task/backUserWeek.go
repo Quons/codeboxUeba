@@ -33,7 +33,7 @@ func backUserWeekStatistic(t model.Task, fromDate time.Time, toDate time.Time) {
 		return
 	}
 	//查询当周的留存用户 todo
-	userKeepWeek, err := mysql.QueryUserKeepPreWeek(t.ConfigId, WeekId)
+	userKeepWeek, err := mysql.QueryUserKeepPreWeek(t.ConfigId, fromDate)
 	if err != nil {
 		log.LogError(err.Error())
 		return
@@ -59,5 +59,10 @@ func backUserWeekStatistic(t model.Task, fromDate time.Time, toDate time.Time) {
 	}
 	backUserWeek := &model.BackUserWeek{WeekId: WeekId, StartDay: startDay, EndDay: endDay, Num: backUserWeekCount, ConfigId: t.ConfigId}
 	//将结果添加到表中
-	mysql.InsertBackUserWeek(backUserWeek)
+	err = mysql.InsertBackUserWeek(backUserWeek)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	fmt.Printf("backUserWeekStatistic:fromday %v,today %v, num is:%v\n", fromDate, toDate, backUserWeekCount)
 }

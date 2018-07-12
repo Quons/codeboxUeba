@@ -29,6 +29,7 @@ func userKeepWeekInitTask(t model.Task, rc chan *model.Task) {
 		log.LogError(err.Error())
 		return
 	}
+	currentTime = currentTime.AddDate(0, 0, -7)
 
 	//获取周一
 	for currentTime.Weekday() != time.Monday {
@@ -37,7 +38,7 @@ func userKeepWeekInitTask(t model.Task, rc chan *model.Task) {
 	}
 	wg := &sync.WaitGroup{}
 	//遍历前7周的数据
-	for i := 1; i < 7; i++ {
+	for i := 0; i < 7; i++ {
 		wg.Add(1)
 		startTime := currentTime.AddDate(0, 0, -7*i)
 		//统计每天数据
@@ -61,7 +62,7 @@ func userKeepWeekInitTaskStatistic(startTime, currentTime time.Time, t model.Tas
 
 	//遍历startTime 到 currentTime之间的
 	tmpTime := startTime
-	for currentTime.After(tmpTime) {
+	for currentTime.After(tmpTime) || currentTime == tmpTime {
 		nextWeek := tmpTime.AddDate(0, 0, 7)
 		//查询当天数据
 		num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 0, 7), nextWeek, nextWeek.AddDate(0, 0, 7), t)
@@ -71,7 +72,11 @@ func userKeepWeekInitTaskStatistic(startTime, currentTime time.Time, t model.Tas
 		}
 		//存储留存数据到mysql
 		userKeepWeek := &model.ActUserKeepWeek{WeekId: WeekId, KeepWeek: keepWeek, Num: num, ConfigId: t.ConfigId}
-		mysql.InsertActUserKeepWeek(userKeepWeek)
+		err = mysql.InsertActUserKeepWeek(userKeepWeek)
+		if err != nil {
+			log.LogError(err.Error())
+		}
+		fmt.Printf("userKeepWeekInitTaskStatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
 		tmpTime = nextWeek
 		keepWeek++
 	}
@@ -85,6 +90,7 @@ func userKeepWeekDailyTask(t model.Task) {
 		log.LogError(err.Error())
 		return
 	}
+	currentTime = currentTime.AddDate(0, 0, -7)
 
 	//获取周一
 	for currentTime.Weekday() != time.Monday {
@@ -92,11 +98,10 @@ func userKeepWeekDailyTask(t model.Task) {
 	}
 
 	//遍历前7周的数据
-	for i := 1; i < 7; i++ {
-		startTime := currentTime.AddDate(0, 0, -7)
+	for i := 0; i < 7; i++ {
+		startTime := currentTime.AddDate(0, 0, -7*i)
 		//统计每天数据
 		go userKeepWeekDailyTaskStatistic(startTime, currentTime, t)
-		currentTime = startTime
 	}
 
 }
@@ -120,5 +125,9 @@ func userKeepWeekDailyTaskStatistic(startTime, currentTime time.Time, t model.Ta
 		return
 	}
 	userKeepWeek := &model.ActUserKeepWeek{WeekId: WeekId, KeepWeek: keepWeek, Num: num, ConfigId: t.ConfigId}
-	mysql.InsertActUserKeepWeek(userKeepWeek)
+	err = mysql.InsertActUserKeepWeek(userKeepWeek)
+	if err != nil {
+		log.LogError(err.Error())
+	}
+	fmt.Printf("userKeepWeekDailyTaskStatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
 }

@@ -4,7 +4,6 @@ import (
 	"sync"
 	"codeboxUeba/model"
 	"time"
-	"codeboxUeba/utils"
 	"codeboxUeba/postgres"
 	"fmt"
 	"strconv"
@@ -33,10 +32,19 @@ func actUserWeekStatistics(t model.Task, fromDate time.Time, toDate time.Time) {
 	}
 	//把查询到的数据插入到mysql中
 	weekId, err := strconv.Atoi(fromDate.Format("20060102"))
-	utils.CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
 	endDay, err := strconv.Atoi(toDate.Format("20060102"))
-	utils.CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
 	actUserWeek := &model.ActUserWeek{Num: num, ConfigId: t.ConfigId, WeekId: weekId, StartDay: weekId, EndDay: endDay}
-	mysql.InsertActUserWeek(actUserWeek)
+	err = mysql.InsertActUserWeek(actUserWeek)
+	if err != nil {
+		log.LogError(err.Error())
+	}
 	fmt.Printf("actUserWeek:fromday %v,today %v, num is:%v\n", fromDate, toDate, num)
 }

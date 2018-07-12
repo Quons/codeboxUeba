@@ -12,5 +12,10 @@ func TestQueryInterfaceByConfig(t *testing.T) {
 
 func TestFailRecord(t *testing.T) {
 	Init()
-	FailRecord("20180705",5)
+	FailRecord("20180705", 5)
+}
+
+func TestQueryInterfaceParamByConfig(t *testing.T) {
+	s := QueryInterfaceParamByConfig(1)
+	t.Log(s)
 }

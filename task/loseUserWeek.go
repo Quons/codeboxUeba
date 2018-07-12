@@ -58,5 +58,10 @@ func loseUserWeekStatistic(t model.Task, fromDate time.Time, toDate time.Time) {
 	}
 	loseUserWeek := &model.LoseUserWeek{WeekId: weekId, StartDay: startDay, EndDay: endDay, Num: loseUserWeekCount, ConfigId: t.ConfigId}
 	//将结果添加到表中
-	mysql.InsertLoseUserWeek(loseUserWeek)
+	err = mysql.InsertLoseUserWeek(loseUserWeek)
+	if err != nil {
+		log.LogError(err.Error())
+	}
+	fmt.Printf("loseUserWeekStatistic:fromday %v,today %v, num is:%+v\n", fromDate, toDate, loseUserWeekCount)
+
 }
