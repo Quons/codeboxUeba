@@ -23,7 +23,7 @@ func TestUserKeepInitTask(t *testing.T) {
 		}
 	}()
 
-	userKeepInitTask(model.Task{Id: 1, ConfigId: 1}, rc)
+	userKeepInitTask(model.Task{Id: 1, ConfigId: 1})
 }
 func TestUserKeepDailyTask(t *testing.T) {
 	userKeepDailyTask(model.Task{Id: 1, ConfigId: 1})

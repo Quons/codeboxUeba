@@ -1,7 +1,6 @@
 package task
 
 import (
-	"sync"
 	"codeboxUeba/model"
 	"time"
 	"strconv"
@@ -11,18 +10,17 @@ import (
 	"fmt"
 )
 
-func actUserKeepWeekTask(wg *sync.WaitGroup, rc chan *model.Task, t model.Task) {
+func actUserKeepWeekTask(t model.Task) {
 	//判断Cursors的值，如果为"init" ，则是初始化任务，否则是日常任务
-	if t.Cursors != time.Now().Format("20060102") {
+	if t.FromDate != "" {
 		//初始化任务
-		userKeepWeekInitTask(t, rc)
+		userKeepWeekInitTask(t)
 	} else {
 		userKeepWeekDailyTask(t)
 	}
-	wg.Done()
 }
 
-func userKeepWeekInitTask(t model.Task, rc chan *model.Task) {
+func userKeepWeekInitTask(t model.Task) {
 	//获取当前时间到7周前的时间列表
 	currentTime, err := time.Parse("20060102", time.Now().Format("20060102"))
 	if err != nil {
@@ -36,28 +34,29 @@ func userKeepWeekInitTask(t model.Task, rc chan *model.Task) {
 		fmt.Println(currentTime)
 		currentTime = currentTime.AddDate(0, 0, -1)
 	}
-	wg := &sync.WaitGroup{}
 	//遍历前7周的数据
 	for i := 0; i < 7; i++ {
-		wg.Add(1)
 		startTime := currentTime.AddDate(0, 0, -7*i)
 		//统计每天数据
-		go userKeepWeekInitTaskStatistic(startTime, currentTime, t, wg)
+		go func() {
+			result := userKeepWeekInitTaskStatistic(startTime, currentTime, t)
+			if result == ErrorCode {
+				mysql.FailRecord(startTime.Format("20060102"), t.Id)
+			}
+		}()
 	}
-	wg.Wait()
 	//todo 暂时使用当前时间存档
 	t.Cursors = time.Now().Format("20060102")
-	rc <- &t
 }
 
-func userKeepWeekInitTaskStatistic(startTime, currentTime time.Time, t model.Task, wg *sync.WaitGroup) {
+func userKeepWeekInitTaskStatistic(startTime, currentTime time.Time, t model.Task, ) int {
 	keepWeek := 0
 	//weekId为当年的第几周
 	year, week := startTime.ISOWeek()
 	WeekId, err := strconv.Atoi(fmt.Sprintf("%v%v", year, week))
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return ErrorCode
 	}
 
 	//遍历startTime 到 currentTime之间的
@@ -68,19 +67,20 @@ func userKeepWeekInitTaskStatistic(startTime, currentTime time.Time, t model.Tas
 		num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 0, 7), nextWeek, nextWeek.AddDate(0, 0, 7), t)
 		if err != nil {
 			log.LogError(err.Error())
-			return
+			return ErrorCode
 		}
 		//存储留存数据到mysql
 		userKeepWeek := &model.ActUserKeepWeek{WeekId: WeekId, KeepWeek: keepWeek, Num: num, ConfigId: t.ConfigId}
 		err = mysql.InsertActUserKeepWeek(userKeepWeek)
 		if err != nil {
 			log.LogError(err.Error())
+			return ErrorCode
 		}
 		fmt.Printf("userKeepWeekInitTaskStatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
 		tmpTime = nextWeek
 		keepWeek++
 	}
-	wg.Done()
+	return SuccessCode
 }
 
 func userKeepWeekDailyTask(t model.Task) {
@@ -101,12 +101,17 @@ func userKeepWeekDailyTask(t model.Task) {
 	for i := 0; i < 7; i++ {
 		startTime := currentTime.AddDate(0, 0, -7*i)
 		//统计每天数据
-		go userKeepWeekDailyTaskStatistic(startTime, currentTime, t)
-	}
+		go func() {
+			result := userKeepWeekDailyTaskStatistic(startTime, currentTime, t)
+			if result == ErrorCode {
+				mysql.FailRecord(startTime.Format("20060102"), t.Id)
+			}
+		}()
 
+	}
 }
 
-func userKeepWeekDailyTaskStatistic(startTime, currentTime time.Time, t model.Task) {
+func userKeepWeekDailyTaskStatistic(startTime, currentTime time.Time, t model.Task) int {
 	_, cw := currentTime.ISOWeek()
 	//weekId为当年的第几周
 	sy, sw := startTime.ISOWeek()
@@ -116,18 +121,20 @@ func userKeepWeekDailyTaskStatistic(startTime, currentTime time.Time, t model.Ta
 	WeekId, err := strconv.Atoi(fmt.Sprintf("%v%v", sy, sw))
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return ErrorCode
 	}
 
 	num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 0, 7), currentTime, currentTime.AddDate(0, 0, 7), t)
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return ErrorCode
 	}
 	userKeepWeek := &model.ActUserKeepWeek{WeekId: WeekId, KeepWeek: keepWeek, Num: num, ConfigId: t.ConfigId}
 	err = mysql.InsertActUserKeepWeek(userKeepWeek)
 	if err != nil {
 		log.LogError(err.Error())
+		return ErrorCode
 	}
 	fmt.Printf("userKeepWeekDailyTaskStatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
+	return SuccessCode
 }

@@ -3,14 +3,17 @@ package task
 import (
 	"codeboxUeba/model"
 	. "codeboxUeba/conf"
-	"sync"
 	"time"
 	"codeboxUeba/log"
-	"codeboxUeba/utils"
-	"fmt"
+	"codeboxUeba/mysql"
 )
 
-func TasksFactory(taskName string) (f func(wg *sync.WaitGroup, rc chan *model.Task, task model.Task)) {
+const (
+	ErrorCode   = 0
+	SuccessCode = 1
+)
+
+func TasksFactory(taskName string) (f func(task model.Task)) {
 	switch taskName {
 	case ActUserWeek:
 		return actUserWeekTask
@@ -45,89 +48,169 @@ func TasksFactory(taskName string) (f func(wg *sync.WaitGroup, rc chan *model.Ta
 	}
 }
 
-func dayStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
-	//获取cursor到当前时间的时间列表 todo 添加指定时间段的功能
-	//fmt.Println("cursor.......",t.Cursors)
-	fromDate, err := time.Parse("20060102", t.Cursors)
-	if err != nil {
-		log.LogError(err.Error())
-		return
-	}
-	nowDate := time.Now()
-	for {
-		toDate := fromDate.AddDate(0, 0, 1)
-		//只执行到当前日期
-		if toDate.After(nowDate) {
-			//更新执行状态 数据库或者文件，暂时使用文件进行记录
-			//使用channel进行通信
-			t.Cursors = fromDate.Format("20060102")
-			rc <- &t
-			wg.Done()
+func dayStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time) int) {
+	//批量任务
+	if t.FromDate != "" && t.ToDate != "" {
+		fromDate, err := time.Parse("20060102", t.FromDate)
+		if err != nil {
+			log.LogError(err.Error())
 			return
 		}
-		fmt.Println("fromdate:",fromDate," todate:",toDate,"nowDate:",nowDate)
-		go f(t, fromDate, toDate)
-		fromDate = toDate
-	}
-}
-
-func monthStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
-	//获取cursor到当前时间的时间列表
-	fromDate, err := time.Parse("20060102", t.Cursors)
-	if err != nil {
-		log.LogError(err.Error())
-		return
-	}
-	// 获取本月的一号 todo 添加指定时间段的功能
-	fromDate, err = time.Parse("200601", fromDate.Format("200601"))
-	if err != nil {
-		log.LogError(err.Error())
-		return
-	}
-	nowDate := time.Now()
-	for {
-		toDate := fromDate.AddDate(0, 1, 0)
-		//只执行到当前日期
-		if toDate.After(nowDate) {
-			//使用channel进行通信
-			t.Cursors = fromDate.Format("20060102")
-			rc <- &t
-			wg.Done()
+		if t.ToDate == "" {
+			t.ToDate = time.Now().Format("20060102")
+		}
+		toDate, err := time.Parse("20060102", t.ToDate)
+		if err != nil {
+			log.LogError(err.Error())
 			return
 		}
 
-		go f(t, fromDate, toDate)
-		//actUserDayChan <- &model.ActUserDayStatistic{t, fromDate, toDate}
-		fromDate = toDate
+		tmpDate := toDate
+		for fromDate.Before(toDate) {
+			tmpDate = fromDate.AddDate(0, 0, 1)
+			go func(from, to time.Time, t model.Task) {
+				result := f(t, from, to)
+				if result == ErrorCode {
+					//记录错误信息
+					mysql.FailRecord(from.Format("20060102"), t.Id)
+				}
+			}(fromDate, tmpDate, t)
+			fromDate = tmpDate
+		}
+		//todo 修改fromdate todate
+		mysql.UpdateCursor(&t)
 	}
+
+	//日常任务
+	//获取任务区间
+	toTime, err := time.Parse("20060102", time.Now().Format("20060102"))
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	fromTime := toTime.AddDate(0, 0, -1)
+	go func() {
+		result := f(t, fromTime, toTime)
+		if result == ErrorCode {
+			//记录错误信息
+			mysql.FailRecord(fromTime.Format("20060102"), t.Id)
+		}
+	}()
 }
 
-func weekStatistic(wg *sync.WaitGroup, rc chan *model.Task, t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
-	//获取cursor到当前时间的时间列表 todo 添加指定时间段的功能
-	fromDate, err := time.Parse("20060102", t.Cursors)
-	utils.CheckError(err)
+func monthStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time) int) {
+	//批量任务
+	if t.FromDate != "" && t.ToDate != "" {
+		fromDate, err := time.Parse("200601", t.FromDate)
+		if err != nil {
+			log.LogError(err.Error())
+			return
+		}
 
+		if t.ToDate == "" {
+			t.ToDate = time.Now().Format("200601")
+		}
+		toDate, err := time.Parse("200601", t.ToDate)
+		if err != nil {
+			log.LogError(err.Error())
+			return
+		}
+		tmpDate := toDate
+		for fromDate.Before(toDate) {
+			tmpDate = fromDate.AddDate(0, 1, 0)
+			go func(from, to time.Time, t model.Task) {
+				result := f(t, fromDate, tmpDate)
+				if result == ErrorCode {
+					//记录错误信息
+					mysql.FailRecord(fromDate.Format("20060102"), t.Id)
+				}
+			}(fromDate, toDate, t)
+			fromDate = tmpDate
+		}
+		//todo 修改fromdate todate
+		mysql.UpdateCursor(&t)
+	}
+
+	//日常任务
+	//获取任务区间
+	toTime, err := time.Parse("200601", time.Now().Format("200601"))
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	fromTime := toTime.AddDate(0, -1, 0)
+	go func() {
+		result := f(t, fromTime, toTime)
+		if result == ErrorCode {
+			//记录错误信息
+			mysql.FailRecord(fromTime.Format("200601"), t.Id)
+		}
+	}()
+}
+
+func weekStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time) int) {
+	//批量任务
+	if t.FromDate != "" && t.ToDate != "" {
+		fromDate, err := time.Parse("20060102", t.FromDate)
+		if err != nil {
+			log.LogError(err.Error())
+			return
+		}
+		//获取本周的周一
+		fromDate = getMondayTime(fromDate)
+
+		if t.ToDate == "" {
+			t.ToDate = time.Now().Format("20060102")
+		}
+
+		toDate, err := time.Parse("20060102", t.ToDate)
+		if err != nil {
+			log.LogError(err.Error())
+			return
+		}
+		//获取本周的周一
+		toDate = getMondayTime(toDate)
+		tmpDate := toDate
+		for fromDate.Before(toDate) {
+			tmpDate = fromDate.AddDate(0, 0, 7)
+			go func(from, to time.Time, t model.Task) {
+				result := f(t, fromDate, tmpDate)
+				if result == ErrorCode {
+					//记录错误信息
+					mysql.FailRecord(fromDate.Format("20060102"), t.Id)
+				}
+			}(fromDate, toDate, t)
+			fromDate = tmpDate
+		}
+		//todo 修改fromdate todate
+		mysql.UpdateCursor(&t)
+	}
+
+	//日常任务
+	//获取任务区间
+	toTime, err := time.Parse("20060102", time.Now().Format("20060102"))
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	toTime = getMondayTime(toTime)
+
+	fromTime := toTime.AddDate(0, 0, -7)
+	go func() {
+		result := f(t, fromTime, toTime)
+		if result == ErrorCode {
+			//记录错误信息
+			mysql.FailRecord(fromTime.Format("200601"), t.Id)
+		}
+	}()
+}
+
+func getMondayTime(t time.Time) time.Time {
 	//获取本周的周一
-	weekDay := fromDate.Weekday()
-	for weekDay != time.Monday {
-		fromDate = fromDate.AddDate(0, 0, -1)
-		weekDay = fromDate.Weekday()
+	toMonday := t.Weekday()
+	for toMonday != time.Monday {
+		t = t.AddDate(0, 0, -1)
+		toMonday = t.Weekday()
 	}
-
-	nowDate := time.Now()
-	for {
-		toDate := fromDate.AddDate(0, 0, 7)
-		//只执行到当前日期
-		if toDate.After(nowDate) {
-			//使用channel进行通信
-			t.Cursors = fromDate.Format("20060102")
-			rc <- &t
-			wg.Done()
-			return
-		}
-
-		go f(t, fromDate, toDate)
-		//actUserDayChan <- &model.ActUserDayStatistic{t, fromDate, toDate}
-		fromDate = toDate
-	}
+	return t
 }

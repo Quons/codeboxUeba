@@ -13,7 +13,7 @@ func TestUserKeepWeekInitTask(t *testing.T) {
 		case <-rc:
 		}
 	}()
-	userKeepWeekInitTask(model.Task{Id: 123, ConfigId: 1}, rc)
+	userKeepWeekInitTask(model.Task{Id: 123, ConfigId: 1})
 }
 func TestUserKeepWeekDailyTask(t *testing.T) {
 	userKeepWeekDailyTask(model.Task{Id: 123, ConfigId: 1})

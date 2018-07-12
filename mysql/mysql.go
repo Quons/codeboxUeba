@@ -19,14 +19,14 @@ func Init() {
 }
 
 func ReadConf(jobCode int) (conf []model.Task) {
-	stmt, err := db.Prepare("SELECT t.id,t.job_code,t.cursors,t.task_type,t.config_id,dc.interfaces FROM task_conf t LEFT JOIN ueba_dataconfig dc ON t.config_id=dc.configId  WHERE  job_code=?")
+	stmt, err := db.Prepare("SELECT t.from_date,t.to_date, t.id,t.job_code,t.cursors,t.task_type,t.config_id,dc.interfaces FROM task_conf t LEFT JOIN ueba_dataconfig dc ON t.config_id=dc.configId  WHERE  job_code=?")
 	utils.CheckError(err)
 	rows, err := stmt.Query(jobCode)
 	utils.CheckError(err)
 	defer rows.Close()
 	for rows.Next() {
 		task := model.Task{}
-		rows.Scan(&task.Id, &task.JobCode, &task.Cursors, &task.TaskType, &task.ConfigId, &task.Interface)
+		rows.Scan(&task.FromDate, &task.ToDate, &task.Id, &task.JobCode, &task.Cursors, &task.TaskType, &task.ConfigId, &task.Interface)
 		if task.Interface == "" {
 			log.LogError("interface is empty,please check you config")
 			continue
@@ -37,10 +37,17 @@ func ReadConf(jobCode int) (conf []model.Task) {
 }
 
 func UpdateCursor(task *model.Task) {
-	stmt, err := db.Prepare("UPDATE task_conf SET cursors=? WHERE id=?")
+	stmt, err := db.Prepare("UPDATE task_conf SET from_date='',to_date='' WHERE id=?")
 	utils.CheckError(err)
-	_, err = stmt.Exec(task.Cursors, task.Id)
-	utils.CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	_, err = stmt.Exec(task.Id)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
 }
 
 func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {

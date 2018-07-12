@@ -1,7 +1,6 @@
 package task
 
 import (
-	"sync"
 	"codeboxUeba/model"
 	"time"
 	"codeboxUeba/postgres"
@@ -11,40 +10,34 @@ import (
 	"codeboxUeba/log"
 )
 
-func actUserWeekTask(wg *sync.WaitGroup, rc chan *model.Task, t model.Task) {
-	weekStatistic(wg, rc, t, actUserWeekStatistics)
+func actUserWeekTask(t model.Task) {
+	weekStatistic(t, actUserWeekStatistics)
 }
 
-func actUserWeekStatistics(t model.Task, fromDate time.Time, toDate time.Time) {
-
-	defer func() {
-		if recover() != nil {
-			//如果失败，记录失败记录
-			mysql.FailRecord("[actUserWeek:"+fromDate.Format("20060102")+"]", t.Id)
-		}
-	}()
+func actUserWeekStatistics(t model.Task, fromDate time.Time, toDate time.Time) int {
 
 	num, err := postgres.GetGpCount(t.ConfigId, fromDate, toDate)
 	if err != nil {
 		log.LogError(err.Error())
-		panic(err)
-		return
+		return ErrorCode
 	}
 	//把查询到的数据插入到mysql中
 	weekId, err := strconv.Atoi(fromDate.Format("20060102"))
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return ErrorCode
 	}
 	endDay, err := strconv.Atoi(toDate.Format("20060102"))
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return ErrorCode
 	}
 	actUserWeek := &model.ActUserWeek{Num: num, ConfigId: t.ConfigId, WeekId: weekId, StartDay: weekId, EndDay: endDay}
 	err = mysql.InsertActUserWeek(actUserWeek)
 	if err != nil {
 		log.LogError(err.Error())
+		return ErrorCode
 	}
 	fmt.Printf("actUserWeek:fromday %v,today %v, num is:%v\n", fromDate, toDate, num)
+	return SuccessCode
 }

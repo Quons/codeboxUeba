@@ -13,7 +13,7 @@ func TestUserKeepMonthInitTask(t *testing.T) {
 		case <-rc:
 		}
 	}()
-	userKeepMonthInitTask(model.Task{Id: 1, ConfigId: 1}, rc)
+	userKeepMonthInitTask(model.Task{Id: 1, ConfigId: 1})
 	time.Sleep(1 * time.Second)
 }
 
@@ -24,6 +24,6 @@ func TestUserKeepMonthDailyTask(t *testing.T) {
 		case <-rc:
 		}
 	}()
-	userKeepMonthDailyTask(model.Task{Id: 1, ConfigId: 1}, rc)
+	userKeepMonthDailyTask(model.Task{Id: 1, ConfigId: 1})
 	time.Sleep(1 * time.Second)
 }
