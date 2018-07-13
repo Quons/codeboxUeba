@@ -66,7 +66,7 @@ func dayStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate 
 			go f(t, fromDate, toDate)
 			fromDate = tmpDate
 		}
-		//todo 修改fromdate todate
+		//这里失败无非就是任务再跑一遍，不用记录到失败表里
 		mysql.UpdateCursor(&t)
 	}
 

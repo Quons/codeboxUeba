@@ -13,6 +13,7 @@ func InsertActUserDay(actUserDay *model.ActUserDay) error {
 		log.LogError(err.Error())
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(actUserDay.DayId, actUserDay.Num, actUserDay.ConfigId, time.Now(), actUserDay.Num)
 	if err != nil {
 		log.LogError(err.Error())
@@ -28,6 +29,7 @@ func InsertActUserWeek(actUserWeek *model.ActUserWeek) error {
 		log.LogError(err.Error())
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(actUserWeek.WeekId, actUserWeek.Num, actUserWeek.ConfigId, time.Now(), actUserWeek.StartDay, actUserWeek.EndDay, actUserWeek.Num)
 	if err != nil {
 		log.LogError(err.Error())
@@ -42,6 +44,7 @@ func InsertActUserMonth(actUserMonth *model.ActUserMonth) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(actUserMonth.MonthId, actUserMonth.Num, actUserMonth.ConfigId, time.Now(), actUserMonth.Num)
 	if err != nil {
 		return err

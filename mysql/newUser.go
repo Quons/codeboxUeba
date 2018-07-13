@@ -4,7 +4,6 @@ import (
 	"codeboxUeba/model"
 	"time"
 	"codeboxUeba/log"
-	"errors"
 )
 
 func InsertNewUserDay(newUserDay *model.NewUserDay) error {
@@ -14,6 +13,7 @@ func InsertNewUserDay(newUserDay *model.NewUserDay) error {
 		log.LogError(err.Error())
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(newUserDay.DayId, newUserDay.Num, newUserDay.ConfigId, time.Now(), newUserDay.Num)
 	if err != nil {
 		log.LogError(err.Error())
@@ -29,6 +29,7 @@ func InsertNewUserWeek(newUserWeek *model.NewUserWeek) error {
 		log.LogError(err.Error())
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(newUserWeek.WeekId, newUserWeek.Num, newUserWeek.ConfigId, time.Now(), newUserWeek.StartDay, newUserWeek.EndDay, newUserWeek.Num)
 	if err != nil {
 		log.LogError(err.Error())
@@ -57,18 +58,11 @@ func QueryNewUserCurrentWeek(confId int64, weekId int) (int, error) {
 		log.LogError(err.Error())
 		return 0, err
 	}
-
-	rows, err := stmt.Query(confId, weekId)
+	num := 0
+	err = stmt.QueryRow(confId, weekId).Scan(&num)
 	if err != nil {
 		log.LogError(err.Error())
 		return 0, err
-	}
-	num := 0
-	rows.Next()
-	rows.Scan(&num)
-	if rows.Next() {
-		log.LogError("too manny result")
-		return 0, errors.New("too many result")
 	}
 	return num, nil
 }
@@ -78,18 +72,12 @@ func QueryNewUserCurrentMonth(confId int64, weekId int) (int, error) {
 		log.LogError(err.Error())
 		return 0, err
 	}
-
-	rows, err := stmt.Query(confId, weekId)
+	defer stmt.Close()
+	num := 0
+	err = stmt.QueryRow(confId, weekId).Scan(&num)
 	if err != nil {
 		log.LogError(err.Error())
 		return 0, err
-	}
-	num := 0
-	rows.Next()
-	rows.Scan(&num)
-	if rows.Next() {
-		log.LogError("too manny result")
-		return 0, errors.New("too many result")
 	}
 	return num, nil
 }

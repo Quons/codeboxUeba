@@ -13,6 +13,7 @@ func InsertLoseUserWeek(loseUserWeek *model.LoseUserWeek) error {
 		log.LogError(err.Error())
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(loseUserWeek.WeekId, loseUserWeek.Num, loseUserWeek.StartDay, loseUserWeek.EndDay, time.Now(), loseUserWeek.ConfigId, loseUserWeek.Num)
 	if err != nil {
 		log.LogError(err.Error())
@@ -28,6 +29,7 @@ func InsertLoseUserMonth(loseUserMonth *model.LoseUserMonth) error {
 		log.LogError(err.Error())
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(loseUserMonth.MonthId, loseUserMonth.Num, time.Now(), loseUserMonth.ConfigId, loseUserMonth.Num)
 	if err != nil {
 		log.LogError(err.Error())

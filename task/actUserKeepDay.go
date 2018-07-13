@@ -12,7 +12,6 @@ import (
 )
 
 func actUserKeepDayTask(t model.Task) {
-	//判断Cursors的值，不为当前时间，则是初始化任务，否则是日常任务
 	if t.FromDate != "" {
 		//初始化任务
 		userKeepInitTask(t)

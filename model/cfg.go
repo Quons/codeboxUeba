@@ -3,7 +3,6 @@ package model
 type Task struct {
 	Id        int
 	JobCode   int
-	Cursors   string
 	TaskType  string
 	ConfigId  int64
 	Interface string

@@ -19,14 +19,21 @@ func Init() {
 }
 
 func ReadConf(jobCode int) (conf []model.Task) {
-	stmt, err := db.Prepare("SELECT t.from_date,t.to_date, t.id,t.job_code,t.cursors,t.task_type,t.config_id,dc.interfaces FROM task_conf t LEFT JOIN ueba_dataconfig dc ON t.config_id=dc.configId  WHERE  job_code=?")
-	utils.CheckError(err)
+	stmt, err := db.Prepare("SELECT t.from_date,t.to_date, t.id,t.job_code,t.task_type,t.config_id,dc.interfaces FROM task_conf t LEFT JOIN ueba_dataconfig dc ON t.config_id=dc.configId  WHERE  job_code=?")
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	defer stmt.Close()
 	rows, err := stmt.Query(jobCode)
-	utils.CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
 	defer rows.Close()
 	for rows.Next() {
 		task := model.Task{}
-		rows.Scan(&task.FromDate, &task.ToDate, &task.Id, &task.JobCode, &task.Cursors, &task.TaskType, &task.ConfigId, &task.Interface)
+		rows.Scan(&task.FromDate, &task.ToDate, &task.Id, &task.JobCode,  &task.TaskType, &task.ConfigId, &task.Interface)
 		if task.Interface == "" {
 			log.LogError("interface is empty,please check you config")
 			continue
@@ -36,32 +43,39 @@ func ReadConf(jobCode int) (conf []model.Task) {
 	return
 }
 
-func UpdateCursor(task *model.Task) {
+func UpdateCursor(task *model.Task) error {
 	stmt, err := db.Prepare("UPDATE task_conf SET from_date='',to_date='' WHERE id=?")
-	utils.CheckError(err)
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return err
+	}
+	defer stmt.Close()
+	if err != nil {
+		log.LogError(err.Error())
+		return err
 	}
 	_, err = stmt.Exec(task.Id)
 	if err != nil {
 		log.LogError(err.Error())
-		return
+		return err
 	}
+	return nil
 }
 
-func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {
+func QueryInterfaceParamByConfig(configId int64) (interfaceParam string, err error) {
 	interfaceSql := "SELECT interfaces FROM ueba_dataconfig WHERE configId=?"
 	stmt, err := db.Prepare(interfaceSql)
 	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
+	defer stmt.Close()
 	rows, err := stmt.Query(configId)
 	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
+	defer rows.Close()
 	var interfaces string
 	rows.Next()
 	rows.Scan(&interfaces)
@@ -79,6 +93,7 @@ func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {
 		log.LogError(err.Error())
 		return
 	}
+	defer rows.Close()
 
 	var interfaceSlice []string
 	for rows.Next() {
@@ -90,20 +105,6 @@ func QueryInterfaceParamByConfig(configId int64) (interfaceParam string) {
 	return
 }
 
-func FailRecord(date string, confId int) {
-	recordSql := "UPDATE task_conf SET fail_record = concat(ifnull(fail_record,''),?,',') WHERE id = ?"
-	stmt, err := db.Prepare(recordSql)
-	if err != nil {
-		log.LogError(err.Error())
-		return
-	}
-	_, err = stmt.Exec(date, confId)
-	if err != nil {
-		log.LogError(err.Error())
-		return
-	}
-}
-
 func RecordFail(failRecord *model.FailRecord) {
 	failSql := "insert into task_fail_record (job_code, task_type, config_id,from_date,to_date) VALUE (?,?,?,?,?)"
 	stmt, err := db.Prepare(failSql)
@@ -111,6 +112,8 @@ func RecordFail(failRecord *model.FailRecord) {
 		log.LogError(err.Error())
 		return
 	}
+
+	defer stmt.Close()
 	_, err = stmt.Exec(failRecord.JobCode, failRecord.TaskType, failRecord.ConfigId, failRecord.FromDate, failRecord.ToDate)
 	if err != nil {
 		log.LogError(err.Error())
@@ -145,5 +148,4 @@ func CleanFailRecord() {
 		log.LogError(err.Error())
 		return
 	}
-
 }

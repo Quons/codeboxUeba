@@ -10,13 +10,6 @@ import (
 func init() {
 	mysql.Init()
 }
-func TestSqlSelect(t *testing.T) {
-	sql := "SELECT * FROM dw_requestlog where platfrom=$1"
-	dwSlice := SqlSelect(sql, "ios")
-	for _, value := range dwSlice {
-		t.Logf("platform:%v\n", value)
-	}
-}
 
 func TestQueryCount(t *testing.T) {
 	sql := "SELECT count(1) FROM dw_requestlog where platfrom=$1"

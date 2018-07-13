@@ -11,7 +11,6 @@ import (
 )
 
 func actUserKeepWeekTask(t model.Task) {
-	//判断Cursors的值，如果为"init" ，则是初始化任务，否则是日常任务
 	if t.FromDate != "" {
 		//初始化任务
 		userKeepWeekInitTask(t)

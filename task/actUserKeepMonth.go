@@ -11,7 +11,6 @@ import (
 )
 
 func actUserKeepMonthTask(t model.Task) {
-	//判断Cursors的值，如果为当前时间，则是日常任务，否则是初始化任务
 	if t.FromDate != "" {
 		//初始化任务
 		userKeepMonthInitTask(t)

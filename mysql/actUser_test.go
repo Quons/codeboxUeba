@@ -3,6 +3,9 @@ package mysql
 import (
 	"testing"
 	"codeboxUeba/model"
+	"fmt"
+	"crypto/sha256"
+	"encoding/hex"
 )
 
 func init() {
@@ -31,4 +34,16 @@ func TestInsertActUserMonth(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestInit(t *testing.T) {
+	bs := sha256.Sum256([]byte("abcd"))
+	fmt.Println(bs)
+
+	hash := sha256.New()
+	hash.Write([]byte("abcd"))
+	md := hash.Sum(nil)
+	fmt.Println(string(md[:]))
+	mdStr := hex.EncodeToString(md)
+	fmt.Println(mdStr)
 }

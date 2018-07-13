@@ -10,17 +10,20 @@ func init() {
 
 }
 func TestQueryInterfaceByConfig(t *testing.T) {
-	r := QueryInterfaceParamByConfig(1)
+	r, err := QueryInterfaceParamByConfig(1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	t.Log(r)
 }
 
-func TestFailRecord(t *testing.T) {
-	Init()
-	FailRecord("20180705", 5)
-}
-
 func TestQueryInterfaceParamByConfig(t *testing.T) {
-	s := QueryInterfaceParamByConfig(1)
+	s, err := QueryInterfaceParamByConfig(1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	t.Log(s)
 }
 
