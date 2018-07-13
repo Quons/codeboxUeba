@@ -8,6 +8,7 @@ import (
 	"codeboxUeba/mysql"
 	"encoding/json"
 	"path/filepath"
+	"codeboxUeba/log"
 )
 
 var Tasks []model.Task
@@ -16,12 +17,18 @@ var DB *model.DB
 func Init() {
 	//数据库配置
 	abs, err := filepath.Abs("")
-	CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		os.Exit(1)
+	}
 	DB = &model.DB{}
 	err = json.Unmarshal(readFile(abs+"/db.json"), DB)
-	CheckError(err)
+	if err != nil {
+		log.LogError(err.Error())
+		os.Exit(1)
+	}
 	mysql.Init()
-	Tasks = mysql.ReadConf(127)
+	Tasks = mysql.ReadConf()
 }
 
 func readFile(path string) []byte {
@@ -49,4 +56,3 @@ const (
 	LoseUserMonth    = "loseUserMonth"
 	FunnelTask       = "funnelTaskDay"
 )
-

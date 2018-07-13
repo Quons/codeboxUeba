@@ -8,6 +8,7 @@ type Task struct {
 	Interface string
 	FromDate  string
 	ToDate    string
+	Status    int8
 }
 
 type DB struct {

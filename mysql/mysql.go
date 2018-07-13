@@ -18,14 +18,14 @@ func Init() {
 	utils.CheckError(err)
 }
 
-func ReadConf(jobCode int) (conf []model.Task) {
-	stmt, err := db.Prepare("SELECT t.from_date,t.to_date, t.id,t.job_code,t.task_type,t.config_id,dc.interfaces FROM task_conf t LEFT JOIN ueba_dataconfig dc ON t.config_id=dc.configId  WHERE  job_code=?")
+func ReadConf() (conf []model.Task) {
+	stmt, err := db.Prepare("SELECT t.from_date,t.to_date, t.id,t.job_code,t.task_type,t.config_id,dc.interfaces FROM task_conf t LEFT JOIN ueba_dataconfig dc ON t.config_id=dc.configId  WHERE  t.status=1")
 	if err != nil {
 		log.LogError(err.Error())
 		return
 	}
 	defer stmt.Close()
-	rows, err := stmt.Query(jobCode)
+	rows, err := stmt.Query()
 	if err != nil {
 		log.LogError(err.Error())
 		return
@@ -33,7 +33,8 @@ func ReadConf(jobCode int) (conf []model.Task) {
 	defer rows.Close()
 	for rows.Next() {
 		task := model.Task{}
-		rows.Scan(&task.FromDate, &task.ToDate, &task.Id, &task.JobCode,  &task.TaskType, &task.ConfigId, &task.Interface)
+
+		rows.Scan(&task.FromDate, &task.ToDate, &task.Id, &task.JobCode, &task.TaskType, &task.ConfigId, &task.Interface)
 		if task.Interface == "" {
 			log.LogError("interface is empty,please check you config")
 			continue

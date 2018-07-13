@@ -36,7 +36,6 @@ func userKeepInitTask(t model.Task) {
 		//统计每天数据
 		go initTaskStatistic(startTime, currentTime, t)
 	}
-
 }
 
 func initTaskStatistic(startTime, currentTime time.Time, t model.Task) {

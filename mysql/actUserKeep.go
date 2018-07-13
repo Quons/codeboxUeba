@@ -72,7 +72,7 @@ func QueryUserKeepPreWeek(confId int64, fromDate time.Time) (int, error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.LogError("QueryUserKeepPreWeek no result")
-			return 0, err
+			return 0, nil
 		} else {
 			log.LogError(err.Error())
 			return 0, err
@@ -93,6 +93,9 @@ func QueryUserKeepPreMonth(confId int64, fromDate time.Time) (int, error) {
 	var num = 0
 	err = stmt.QueryRow(monthId, confId).Scan(&num)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
 		log.LogError(err.Error())
 		return 0, err
 	}

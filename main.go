@@ -75,5 +75,4 @@ func run(jobCode int, taskType string) {
 			}
 		}
 	}
-
 }
