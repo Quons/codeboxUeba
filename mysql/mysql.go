@@ -103,3 +103,47 @@ func FailRecord(date string, confId int) {
 		return
 	}
 }
+
+func RecordFail(failRecord *model.FailRecord) {
+	failSql := "insert into task_fail_record (job_code, task_type, config_id,from_date,to_date) VALUE (?,?,?,?,?)"
+	stmt, err := db.Prepare(failSql)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	_, err = stmt.Exec(failRecord.JobCode, failRecord.TaskType, failRecord.ConfigId, failRecord.FromDate, failRecord.ToDate)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+}
+
+func ReadFailRecord() (tasks []model.Task, err error) {
+	failRecordSql := "select job_code,task_type,config_id,from_date,to_date from task_fail_record WHERE status=1"
+	stmt, err := db.Prepare(failRecordSql)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	rows, err := stmt.Query()
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+	for rows.Next() {
+		var task model.Task
+		rows.Scan(&task)
+		tasks = append(tasks, task)
+	}
+	return
+}
+
+func CleanFailRecord() {
+	cleanSql := "update task_fail_record SET status=0"
+	_, err := db.Exec(cleanSql)
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+
+}

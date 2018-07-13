@@ -33,18 +33,13 @@ func userKeepMonthInitTask(t model.Task) {
 	for i := 0; i < 7; i++ {
 		startTime := currentTime.AddDate(0, -i, 0)
 		//统计每天数据
-		go func() {
-			result := userKeepMonthInitTaskStatistic(startTime, currentTime, t)
-			if result == ErrorCode {
-				mysql.FailRecord(startTime.Format("200601"), t.Id)
+		go userKeepMonthInitTaskStatistic(startTime, currentTime, t)
 
-			}
-		}()
 	}
 
 }
 
-func userKeepMonthInitTaskStatistic(startTime, currentTime time.Time, t model.Task) int {
+func userKeepMonthInitTaskStatistic(startTime, currentTime time.Time, t model.Task) {
 	keepMonth := 0
 	//遍历startTime 到 currentTime之间的
 	tmpTime := startTime
@@ -53,26 +48,27 @@ func userKeepMonthInitTaskStatistic(startTime, currentTime time.Time, t model.Ta
 		num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 1, 0), nextMonth, nextMonth.AddDate(0, 1, 0), t)
 		if err != nil {
 			log.LogError(err.Error())
-			return ErrorCode
+			RecordFailTask(startTime, nextMonth, &t)
+			return
 		}
 		//存储数据到mysql
 		monthId, err := strconv.Atoi(startTime.Format("200601"))
 		if err != nil {
 			log.LogError(err.Error())
-			return ErrorCode
+			RecordFailTask(startTime, nextMonth, &t)
+			continue
 		}
 		userKeepMonth := &model.ActUserKeepMonth{MonthId: monthId, KeepMonth: keepMonth, Num: num, ConfigId: t.ConfigId}
 		err = mysql.InsertActUserKeepMonth(userKeepMonth)
 		if err != nil {
 			log.LogError(err.Error())
-			return ErrorCode
+			RecordFailTask(startTime, nextMonth, &t)
+			return
 		}
 		fmt.Printf("userKeepMonthInitTaskStatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
 		tmpTime = nextMonth
 		keepMonth++
 	}
-	return SuccessCode
-
 }
 
 func userKeepMonthDailyTask(t model.Task) {
@@ -89,17 +85,13 @@ func userKeepMonthDailyTask(t model.Task) {
 		startTime := currentTime.AddDate(0, -i, 0)
 		//统计每月数据
 		go func() {
-			result := userKeepMonthDailyTaskStatistic(startTime, currentTime, t)
-			if result == ErrorCode {
-				mysql.FailRecord(startTime.Format("200601"), t.Id)
-
-			}
+			userKeepMonthDailyTaskStatistic(startTime, currentTime, t)
 		}()
 
 	}
 }
 
-func userKeepMonthDailyTaskStatistic(startTime, currentTime time.Time, t model.Task) int {
+func userKeepMonthDailyTaskStatistic(startTime, currentTime time.Time, t model.Task) {
 	//计算keepMonth
 	keepMonth := 0
 	tmpTime := startTime
@@ -112,19 +104,21 @@ func userKeepMonthDailyTaskStatistic(startTime, currentTime time.Time, t model.T
 
 	if err != nil {
 		log.LogError(err.Error())
-		return ErrorCode
+		RecordFailTask(startTime, currentTime, &t)
+		return
 	}
 	monthId, err := strconv.Atoi(startTime.Format("200601"))
 	if err != nil {
 		log.LogError(err.Error())
-		return ErrorCode
+		RecordFailTask(startTime, currentTime, &t)
+		return
 	}
 	userKeepMonth := &model.ActUserKeepMonth{MonthId: monthId, KeepMonth: keepMonth, Num: num, ConfigId: t.ConfigId}
 	err = mysql.InsertActUserKeepMonth(userKeepMonth)
 	if err != nil {
 		log.LogError(err.Error())
-		return ErrorCode
+		RecordFailTask(startTime, currentTime, &t)
+		return
 	}
 	fmt.Printf("userKeepMonthDailyTaskStatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
-	return SuccessCode
 }

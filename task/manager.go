@@ -8,11 +8,6 @@ import (
 	"codeboxUeba/mysql"
 )
 
-const (
-	ErrorCode   = 0
-	SuccessCode = 1
-)
-
 func TasksFactory(taskName string) (f func(task model.Task)) {
 	switch taskName {
 	case ActUserWeek:
@@ -48,7 +43,7 @@ func TasksFactory(taskName string) (f func(task model.Task)) {
 	}
 }
 
-func dayStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time) int) {
+func dayStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
 	//批量任务
 	if t.FromDate != "" && t.ToDate != "" {
 		fromDate, err := time.Parse("20060102", t.FromDate)
@@ -68,13 +63,7 @@ func dayStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate 
 		tmpDate := toDate
 		for fromDate.Before(toDate) {
 			tmpDate = fromDate.AddDate(0, 0, 1)
-			go func(from, to time.Time, t model.Task) {
-				result := f(t, from, to)
-				if result == ErrorCode {
-					//记录错误信息
-					mysql.FailRecord(from.Format("20060102"), t.Id)
-				}
-			}(fromDate, tmpDate, t)
+			go f(t, fromDate, toDate)
 			fromDate = tmpDate
 		}
 		//todo 修改fromdate todate
@@ -89,16 +78,10 @@ func dayStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate 
 		return
 	}
 	fromTime := toTime.AddDate(0, 0, -1)
-	go func() {
-		result := f(t, fromTime, toTime)
-		if result == ErrorCode {
-			//记录错误信息
-			mysql.FailRecord(fromTime.Format("20060102"), t.Id)
-		}
-	}()
+	go f(t, fromTime, toTime)
 }
 
-func monthStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time) int) {
+func monthStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
 	//批量任务
 	if t.FromDate != "" && t.ToDate != "" {
 		fromDate, err := time.Parse("200601", t.FromDate)
@@ -118,13 +101,7 @@ func monthStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDat
 		tmpDate := toDate
 		for fromDate.Before(toDate) {
 			tmpDate = fromDate.AddDate(0, 1, 0)
-			go func(from, to time.Time, t model.Task) {
-				result := f(t, fromDate, tmpDate)
-				if result == ErrorCode {
-					//记录错误信息
-					mysql.FailRecord(fromDate.Format("20060102"), t.Id)
-				}
-			}(fromDate, toDate, t)
+			go f(t, fromDate, tmpDate)
 			fromDate = tmpDate
 		}
 		//todo 修改fromdate todate
@@ -139,16 +116,10 @@ func monthStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDat
 		return
 	}
 	fromTime := toTime.AddDate(0, -1, 0)
-	go func() {
-		result := f(t, fromTime, toTime)
-		if result == ErrorCode {
-			//记录错误信息
-			mysql.FailRecord(fromTime.Format("200601"), t.Id)
-		}
-	}()
+	go f(t, fromTime, toTime)
 }
 
-func weekStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time) int) {
+func weekStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate time.Time)) {
 	//批量任务
 	if t.FromDate != "" && t.ToDate != "" {
 		fromDate, err := time.Parse("20060102", t.FromDate)
@@ -173,13 +144,7 @@ func weekStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate
 		tmpDate := toDate
 		for fromDate.Before(toDate) {
 			tmpDate = fromDate.AddDate(0, 0, 7)
-			go func(from, to time.Time, t model.Task) {
-				result := f(t, fromDate, tmpDate)
-				if result == ErrorCode {
-					//记录错误信息
-					mysql.FailRecord(fromDate.Format("20060102"), t.Id)
-				}
-			}(fromDate, toDate, t)
+			go f(t, fromDate, tmpDate)
 			fromDate = tmpDate
 		}
 		//todo 修改fromdate todate
@@ -196,13 +161,7 @@ func weekStatistic(t model.Task, f func(t model.Task, fromDate time.Time, toDate
 	toTime = getMondayTime(toTime)
 
 	fromTime := toTime.AddDate(0, 0, -7)
-	go func() {
-		result := f(t, fromTime, toTime)
-		if result == ErrorCode {
-			//记录错误信息
-			mysql.FailRecord(fromTime.Format("200601"), t.Id)
-		}
-	}()
+	go f(t, fromTime, toTime)
 }
 
 func getMondayTime(t time.Time) time.Time {
@@ -213,4 +172,8 @@ func getMondayTime(t time.Time) time.Time {
 		toMonday = t.Weekday()
 	}
 	return t
+}
+
+func RecordFailTask(fromTime, toTime time.Time, t *model.Task) {
+	mysql.RecordFail(&model.FailRecord{ConfigId: t.ConfigId, TaskType: t.TaskType, FromDate: fromTime.Format("20060102"), ToDate: toTime.Format("20060102"), JobCode: t.JobCode})
 }

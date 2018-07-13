@@ -35,22 +35,18 @@ func userKeepInitTask(t model.Task) {
 	for i := 0; i < 14; i++ {
 		startTime := currentTime.AddDate(0, 0, -i)
 		//统计每天数据
-		go func() {
-			result := initTaskStatistic(startTime, currentTime, t)
-			if result == ErrorCode {
-				mysql.FailRecord(startTime.Format("20060102"), t.Id)
-			}
-		}()
+		go initTaskStatistic(startTime, currentTime, t)
 	}
 
 }
 
-func initTaskStatistic(startTime, currentTime time.Time, t model.Task) int {
+func initTaskStatistic(startTime, currentTime time.Time, t model.Task) {
 	keepDay := 0
 	dayId, err := strconv.Atoi(startTime.Format("20060102"))
 	if err != nil {
 		log.LogError(err.Error())
-		return ErrorCode
+		RecordFailTask(startTime, currentTime, &t)
+		return
 	}
 	//遍历startTime 到 currentTime之间的
 	tmpTime := startTime
@@ -59,21 +55,22 @@ func initTaskStatistic(startTime, currentTime time.Time, t model.Task) int {
 		//查询当天数据
 		num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 0, 1), nextDay, nextDay.AddDate(0, 0, 1), t)
 		if err != nil {
+			RecordFailTask(startTime, nextDay, &t)
 			log.LogError(err.Error())
-			return ErrorCode
+			return
 		}
 		//存储数据到mysql
 		userKeepDay := &model.ActUserKeepDay{DayId: dayId, KeepDay: keepDay, Num: num, ConfigId: t.ConfigId}
 		err = mysql.InsertActUserKeepDay(userKeepDay)
 		if err != nil {
+			RecordFailTask(startTime, nextDay, &t)
 			log.LogError(err.Error())
-			return ErrorCode
+			return
 		}
 		fmt.Printf("initTaskSatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
 		tmpTime = nextDay
 		keepDay++
 	}
-	return SuccessCode
 }
 
 func userKeepDailyTask(t model.Task) {
@@ -89,38 +86,33 @@ func userKeepDailyTask(t model.Task) {
 	for i := 0; i < 14; i++ {
 		startTime := currentTime.AddDate(0, 0, -i)
 		//统计每天数据
-		go func() {
-			result := dailyTaskStatistic(startTime, currentTime, t)
-			if result == ErrorCode {
-				mysql.FailRecord(startTime.Format("20060102"), t.Id)
-
-			}
-		}()
+		go dailyTaskStatistic(startTime, currentTime, t)
 	}
-
 }
 
-func dailyTaskStatistic(startTime, currentTime time.Time, t model.Task) int {
+func dailyTaskStatistic(startTime, currentTime time.Time, t model.Task) {
 	duration := currentTime.Sub(startTime)
 	keepDay := int(math.Floor((duration.Hours() / 24) + 0.5))
 	dayId, err := strconv.Atoi(startTime.Format("20060102"))
 	if err != nil {
 		log.LogError(err.Error())
-		return ErrorCode
+		RecordFailTask(startTime, currentTime, &t)
+		return
 	}
 	//查询gp
 	num, err := postgres.GetUserKeepCount(startTime, startTime.AddDate(0, 0, 1), currentTime, currentTime.AddDate(0, 0, 1), t)
 	if err != nil {
 		log.LogError(err.Error())
-		return ErrorCode
+		RecordFailTask(startTime, currentTime, &t)
+		return
 	}
 	//存储数据到mysql
 	userKeepDay := &model.ActUserKeepDay{DayId: dayId, KeepDay: keepDay, Num: num, ConfigId: t.ConfigId}
 	err = mysql.InsertActUserKeepDay(userKeepDay)
 	if err != nil {
 		log.LogError(err.Error())
-		return ErrorCode
+		RecordFailTask(startTime, currentTime, &t)
+		return
 	}
 	fmt.Printf("dailyTaskSatistic:fromday %v,currentTime:%v,num is:%v\n", startTime, currentTime, num)
-	return SuccessCode
 }

@@ -28,3 +28,12 @@ type FailInfo struct {
 	date   string
 	taskId int
 }
+
+type FailRecord struct {
+	Id       int
+	JobCode  int
+	TaskType string
+	ConfigId int64
+	FromDate string
+	ToDate   string
+}

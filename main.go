@@ -6,6 +6,9 @@ import (
 	"codeboxUeba/conf"
 	"flag"
 	"strings"
+	"codeboxUeba/mysql"
+	"codeboxUeba/log"
+	"fmt"
 )
 
 func main() {
@@ -31,8 +34,37 @@ func main() {
 	c.AddFunc(specMonth, func() {
 		run(jobCode, "Month")
 	})
+
+	specFailRetry := "*/5 * * * * ?"
+	c.AddFunc(specFailRetry, func() {
+		reTry(jobCode)
+	})
 	c.Start()
 	select {}
+}
+
+func reTry(jobCode int) {
+	failRecords, err := mysql.ReadFailRecord()
+	if err != nil {
+		log.LogError(err.Error())
+		return
+	}
+
+	for _, t := range failRecords {
+		fmt.Println("cursor.......", t.FromDate)
+		if t.JobCode == jobCode {
+			job := task.TasksFactory(t.TaskType)
+			if job != nil {
+				//todo 判断todate是否为null，为null就设置成当前时间
+				go job(t)
+			} else {
+				continue
+			}
+		}
+	}
+	//执行完之后清除失败记录
+	mysql.CleanFailRecord()
+
 }
 
 func run(jobCode int, taskType string) {
